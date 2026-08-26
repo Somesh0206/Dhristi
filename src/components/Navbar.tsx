@@ -195,8 +195,8 @@ export default function Navbar() {
             {/* Voice Assistant Trigger Button (VAANI AI) */}
             <button
               onClick={openVoiceAssistant}
-              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-md shadow-pink-600/20 transition-all hover:scale-105"
-              title="Open Dhristi AI Voice Assistant (Vaani - Female Voice)"
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 text-white shadow-md shadow-purple-600/20 transition-all hover:scale-105"
+              title="Open Dhristi AI Voice Assistant (VAANI)"
             >
               <Mic className="w-3.5 h-3.5 animate-pulse" />
               <span className="hidden sm:inline">{language === 'hi' ? 'वाणी AI' : 'Vaani AI'}</span>

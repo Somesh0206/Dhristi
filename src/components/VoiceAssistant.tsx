@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import {
@@ -22,6 +23,7 @@ import {
   Database,
   Trash2,
   Lock,
+  MessageSquare,
 } from 'lucide-react';
 
 interface VoiceMessage {
@@ -53,7 +55,6 @@ export default function VoiceAssistant() {
   const [isSpeechSupported, setIsSpeechSupported] = useState(true);
   const [messages, setMessages] = useState<VoiceMessage[]>([]);
   const [isDbLoaded, setIsDbLoaded] = useState(false);
-  const [femaleVoiceName, setFemaleVoiceName] = useState<string>('Default Female Voice');
 
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -76,13 +77,13 @@ export default function VoiceAssistant() {
             }))
           );
         } else {
-          // Initialize initial female greeting
+          // Initialize initial greeting (Natural female voice without mentioning it in text)
           const initialGreeting: VoiceMessage = {
             sender: 'assistant',
             text:
               language === 'hi'
-                ? 'नमस्ते! मैं दृष्टि एआई वॉयस असिस्टेंट (वाणी) हूँ। मेरी आवाज़ अब विशेष रूप से महिला स्वर में सक्रिय है। आप मुझसे निकटतम सुरक्षित आश्रय, भूस्खलन रेड-ज़ोन, निकासी मार्ग, मौसम या आपातकालीन SOS के बारे में पूछ सकते हैं।'
-                : 'Namaste! I am Dhristi AI Voice Assistant (Vaani). My voice is active in female tone. You can ask me to find nearest safe shelters, inspect hazard red-zones, guide evacuation road routes, check weather, or trigger emergency SOS.',
+                ? 'नमस्ते! मैं दृष्टि एआई वॉयस असिस्टेंट (वाणी) हूँ। आप मुझसे निकटतम सुरक्षित आश्रय, भूस्खलन रेड-ज़ोन, निकासी मार्ग, मौसम, सुरक्षित चैट या आपातकालीन SOS के बारे में पूछ सकते हैं।'
+                : 'Namaste! I am Dhristi AI Voice Assistant (Vaani). You can ask me to find nearest safe shelters, inspect hazard red-zones, guide evacuation road routes, check weather, open encrypted staff chat, or trigger emergency SOS.',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           };
           setMessages([initialGreeting]);
@@ -187,7 +188,7 @@ export default function VoiceAssistant() {
     }
   }, [language, transcript]);
 
-  // Helper: Find a natural Female Voice across browsers
+  // Helper: Find natural Female Voice across browsers
   const getFemaleVoice = (lang: 'en' | 'hi'): SpeechSynthesisVoice | null => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
 
@@ -195,7 +196,6 @@ export default function VoiceAssistant() {
     if (!voices || voices.length === 0) return null;
 
     if (lang === 'hi') {
-      // Look for Hindi female voice first
       const hiFemale = voices.find(
         (v) =>
           (v.lang.startsWith('hi') || v.lang.includes('IN')) &&
@@ -209,12 +209,10 @@ export default function VoiceAssistant() {
       );
       if (hiFemale) return hiFemale;
 
-      // Any Hindi voice
       const hiVoice = voices.find((v) => v.lang.startsWith('hi'));
       if (hiVoice) return hiVoice;
     }
 
-    // English Female Voices (Samantha, Zira, Victoria, Karen, Google UK English Female, Moira, etc.)
     const enFemale = voices.find(
       (v) =>
         (v.lang.startsWith('en') || v.lang.includes('en')) &&
@@ -231,17 +229,15 @@ export default function VoiceAssistant() {
     );
     if (enFemale) return enFemale;
 
-    // Fallback to any voice with female in name
     const genericFemale = voices.find(
       (v) => v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('woman')
     );
     if (genericFemale) return genericFemale;
 
-    // Return first matching lang voice
     return voices.find((v) => v.lang.startsWith(lang === 'hi' ? 'hi' : 'en')) || voices[0] || null;
   };
 
-  // Speak text aloud using authentic female pitch and timbre
+  // Speak text aloud using female acoustic resonance
   const speakFemaleText = (text: string) => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -250,10 +246,8 @@ export default function VoiceAssistant() {
       const targetVoice = getFemaleVoice(language);
       if (targetVoice) {
         utterance.voice = targetVoice;
-        setFemaleVoiceName(targetVoice.name);
       }
 
-      // Female acoustic resonance tuning: pitch between 1.20 - 1.28
       utterance.pitch = 1.24;
       utterance.rate = 1.02;
       utterance.lang = language === 'hi' ? 'hi-IN' : 'en-US';
@@ -458,14 +452,11 @@ export default function VoiceAssistant() {
     setInputText('');
     setTranscript('');
 
-    // Save both to database
     saveMessageToDb(userMsg);
     saveMessageToDb(assistantMsg);
 
-    // Speak with authentic female voice
     speakFemaleText(assistantReply);
 
-    // Execute route or modal action after speech begins
     if (actionRoute) {
       setTimeout(() => {
         router.push(actionRoute!);
@@ -485,7 +476,6 @@ export default function VoiceAssistant() {
     }
   };
 
-  // Sample prompt chips
   const samplePrompts =
     language === 'hi'
       ? [
@@ -507,12 +497,13 @@ export default function VoiceAssistant() {
 
   if (!isVoiceAssistantOpen) {
     return (
-      /* Floating Voice Assistant Trigger Pill (Bottom Left/Right Synchronized) */
-      <div className="fixed bottom-6 right-6 z-40">
+      /* Floating Bottom-Left Dock: VAANI AI Voice Button + Encrypted Chat Button Together */
+      <div className="fixed bottom-6 left-6 z-40 flex items-center space-x-3">
+        {/* VAANI AI Voice Trigger */}
         <button
           onClick={openVoiceAssistant}
-          className="group relative flex items-center space-x-2.5 px-4 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-full shadow-2xl shadow-pink-500/40 border border-pink-400/40 transition-all hover:scale-105 active:scale-95 animate-bounce-subtle"
-          title="Open Dhristi AI Voice Assistant (Vaani - Female Voice)"
+          className="group relative flex items-center space-x-2.5 px-4 py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 text-white rounded-full shadow-2xl shadow-purple-500/40 border border-purple-400/40 transition-all hover:scale-105 active:scale-95 animate-bounce-subtle"
+          title="Open Dhristi AI Voice Assistant (VAANI)"
         >
           <span className="relative flex h-3 w-3">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
@@ -521,22 +512,32 @@ export default function VoiceAssistant() {
           <Mic className="w-5 h-5 text-white animate-pulse" />
           <div className="flex flex-col text-left">
             <span className="font-black text-xs tracking-wider uppercase">
-              {language === 'hi' ? 'वाणी AI (महिला स्वर)' : 'VAANI AI (Female Voice)'}
-            </span>
-            <span className="text-[9px] text-pink-100/80 font-mono">
-              {language === 'hi' ? 'क्लिक करें व बोलें' : 'Tap to Speak'}
+              {language === 'hi' ? 'वाणी AI (VOICE)' : 'VAANI AI (VOICE)'}
             </span>
           </div>
         </button>
+
+        {/* Encrypted 1-on-1 Chat Trigger */}
+        <Link
+          href="/chat"
+          className="group relative flex items-center space-x-2 px-3.5 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full shadow-2xl shadow-emerald-500/40 border border-emerald-400/40 transition-all hover:scale-105 active:scale-95"
+          title="Open Encrypted 1-on-1 Disaster Support Chat"
+        >
+          <Lock className="w-4 h-4 text-emerald-200" />
+          <span className="font-black text-xs tracking-wider uppercase hidden sm:inline">
+            {language === 'hi' ? 'सुरक्षित चैट' : 'SECURE CHAT'}
+          </span>
+          <span className="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
+        </Link>
       </div>
     );
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-lg animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-pink-500/40 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-purple-500/40 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-700 via-pink-700 to-indigo-800 p-4 sm:p-5 text-white flex items-center justify-between shadow-md">
+        <div className="bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 p-4 sm:p-5 text-white flex items-center justify-between shadow-md">
           <div className="flex items-center space-x-3">
             <div className="relative p-2.5 bg-white/20 rounded-2xl backdrop-blur-sm">
               <Bot className="w-7 h-7 text-white" />
@@ -550,17 +551,17 @@ export default function VoiceAssistant() {
                 <h2 className="text-lg font-black tracking-wide">
                   {language === 'hi' ? 'दृष्टि एआई वॉयस असिस्टेंट (वाणी)' : 'DHRISTI AI VOICE ASSISTANT (VAANI)'}
                 </h2>
-                <span className="text-[10px] bg-pink-950/70 text-pink-200 px-2 py-0.5 rounded-full border border-pink-400/40 font-bold flex items-center space-x-1">
-                  <span>👩 FEMALE VOICE</span>
+                <span className="text-[10px] bg-purple-950/70 text-purple-200 px-2 py-0.5 rounded-full border border-purple-400/40 font-bold flex items-center space-x-1">
+                  <span>🎙️ BILINGUAL AI</span>
                 </span>
               </div>
               <div className="flex items-center space-x-2 mt-0.5">
-                <p className="text-xs text-pink-100/90 font-medium">
+                <p className="text-xs text-purple-100/90 font-medium">
                   {language === 'hi'
                     ? 'आवाज से सुरक्षित आश्रय, रेड ज़ोन, सड़क मार्ग, एन्क्रिप्टेड चैट व SOS निर्देश दें'
                     : 'Speak naturally for Safe Shelters, Red-Zone Risk, Road Routes, Chat & SOS'}
                 </p>
-                <span className="text-[10px] text-pink-200 bg-white/15 px-1.5 py-0.2 rounded font-mono">
+                <span className="text-[10px] text-purple-200 bg-white/15 px-1.5 py-0.2 rounded font-mono">
                   💾 DB SYNCED
                 </span>
               </div>
@@ -610,32 +611,32 @@ export default function VoiceAssistant() {
                 className={`flex items-start space-x-2.5 ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in`}
               >
                 {!isUser && (
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-600 to-purple-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-md">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-md">
                     <Sparkles className="w-4 h-4" />
                   </div>
                 )}
                 <div
                   className={`max-w-[82%] p-3.5 rounded-2xl text-xs sm:text-sm ${
                     isUser
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-tr-none shadow-md shadow-pink-600/20'
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-tr-none shadow-md shadow-purple-600/20'
                       : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700/80 rounded-tl-none shadow-sm'
                   }`}
                 >
                   <p className="leading-relaxed whitespace-pre-line">{msg.text}</p>
                   <div
                     className={`mt-1.5 text-[10px] flex items-center justify-between font-mono ${
-                      isUser ? 'text-pink-200' : 'text-slate-400'
+                      isUser ? 'text-purple-200' : 'text-slate-400'
                     }`}
                   >
                     <span>{msg.time}</span>
                     {!isUser && (
                       <button
                         onClick={() => speakFemaleText(msg.text)}
-                        className="hover:text-pink-500 transition-colors ml-2 flex items-center space-x-1"
-                        title="Replay Voice in Female Audio"
+                        className="hover:text-purple-500 transition-colors ml-2 flex items-center space-x-1"
+                        title="Replay Voice Audio"
                       >
                         <Volume2 className="w-3.5 h-3.5" />
-                        <span className="text-[9px]">Female Voice</span>
+                        <span className="text-[9px]">Replay</span>
                       </button>
                     )}
                   </div>
@@ -648,15 +649,15 @@ export default function VoiceAssistant() {
 
         {/* Live Audio Visualizer / Pulse Bar when listening */}
         {isListening && (
-          <div className="px-4 py-3 bg-pink-50 dark:bg-pink-950/40 border-t border-pink-200 dark:border-pink-800/60 flex items-center justify-between animate-in fade-in">
+          <div className="px-4 py-3 bg-purple-50 dark:bg-purple-950/40 border-t border-purple-200 dark:border-purple-800/60 flex items-center justify-between animate-in fade-in">
             <div className="flex items-center space-x-2.5">
               <div className="flex space-x-1 items-center">
-                <span className="w-1.5 h-6 bg-pink-600 rounded-full animate-bounce"></span>
-                <span className="w-1.5 h-8 bg-purple-500 rounded-full animate-bounce [animation-delay:0.15s]"></span>
-                <span className="w-1.5 h-10 bg-indigo-600 rounded-full animate-bounce [animation-delay:0.3s]"></span>
-                <span className="w-1.5 h-7 bg-rose-500 rounded-full animate-bounce [animation-delay:0.45s]"></span>
+                <span className="w-1.5 h-6 bg-purple-600 rounded-full animate-bounce"></span>
+                <span className="w-1.5 h-8 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.15s]"></span>
+                <span className="w-1.5 h-10 bg-purple-600 rounded-full animate-bounce [animation-delay:0.3s]"></span>
+                <span className="w-1.5 h-7 bg-pink-500 rounded-full animate-bounce [animation-delay:0.45s]"></span>
               </div>
-              <span className="text-xs font-bold text-pink-700 dark:text-pink-300">
+              <span className="text-xs font-bold text-purple-700 dark:text-purple-300">
                 {language === 'hi' ? 'आपकी आवाज सुनी जा रही है... बोलिए' : 'Listening to your voice... Speak now'}
               </span>
             </div>
@@ -674,7 +675,7 @@ export default function VoiceAssistant() {
             <button
               key={i}
               onClick={() => handleUserQuery(prompt)}
-              className="px-2.5 py-1 rounded-full text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:border-pink-500 text-slate-700 dark:text-slate-300 hover:text-pink-600 dark:hover:text-pink-400 transition-all shrink-0 hover:scale-105"
+              className="px-2.5 py-1 rounded-full text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:border-purple-500 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 transition-all shrink-0 hover:scale-105"
             >
               {prompt}
             </button>
@@ -691,9 +692,9 @@ export default function VoiceAssistant() {
               className={`p-3.5 rounded-2xl text-white font-bold transition-all shadow-lg hover:scale-105 active:scale-95 ${
                 isListening
                   ? 'bg-rose-600 shadow-rose-600/30 animate-pulse'
-                  : 'bg-gradient-to-r from-purple-600 to-pink-600 shadow-pink-600/30'
+                  : 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-purple-600/30'
               }`}
-              title={isListening ? 'Stop Listening' : 'Start Voice Input (Female AI Voice)'}
+              title={isListening ? 'Stop Listening' : 'Start Voice Input'}
             >
               {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
             </button>
@@ -708,7 +709,7 @@ export default function VoiceAssistant() {
               }
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              className="flex-1 px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-pink-500 outline-none"
+              className="flex-1 px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 outline-none"
             />
 
             {/* Audio Speech Stop / Play Indicator */}
@@ -717,7 +718,7 @@ export default function VoiceAssistant() {
                 type="button"
                 onClick={stopSpeaking}
                 className="p-3 rounded-2xl bg-amber-500/20 text-amber-500 border border-amber-500/40 transition-colors animate-pulse"
-                title="Mute Female Voice Output"
+                title="Mute Voice Output"
               >
                 <VolumeX className="w-5 h-5" />
               </button>
@@ -727,7 +728,7 @@ export default function VoiceAssistant() {
             <button
               type="submit"
               disabled={!inputText.trim()}
-              className="p-3.5 rounded-2xl bg-pink-600 hover:bg-pink-700 disabled:opacity-40 text-white font-bold shadow-md transition-all hover:scale-105 active:scale-95"
+              className="p-3.5 rounded-2xl bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white font-bold shadow-md transition-all hover:scale-105 active:scale-95"
             >
               <Send className="w-5 h-5" />
             </button>
