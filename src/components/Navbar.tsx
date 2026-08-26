@@ -42,6 +42,9 @@ export default function Navbar() {
     currentUser,
     setIsAuthModalOpen,
     logout,
+    language,
+    setLanguage,
+    t,
   } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -66,21 +69,21 @@ export default function Navbar() {
   }, []);
 
   const navLinks = [
-    { href: '/', label: 'Overview', icon: ShieldAlert },
-    { href: '/red-zones', label: 'Red-Zones GIS', icon: MapPin },
-    { href: '/relocation', label: 'Relocation Hub', icon: Compass },
-    { href: '/shelters', label: 'Safe Shelters', icon: Building2 },
-    { href: '/predictions', label: 'AI Predictions', icon: TrendingUp },
-    { href: '/admin', label: 'Command Center', icon: SlidersHorizontal },
-    { href: '/resources', label: 'Awareness & SOPs', icon: BookOpen },
+    { href: '/', label: t('nav.home', 'Overview'), icon: ShieldAlert },
+    { href: '/red-zones', label: t('nav.redZones', 'Red-Zones'), icon: MapPin },
+    { href: '/relocation', label: t('nav.relocation', 'Relocation Guide'), icon: Compass },
+    { href: '/shelters', label: t('nav.shelters', 'Safe Shelters'), icon: Building2 },
+    { href: '/predictions', label: t('nav.predictions', 'AI Predictions'), icon: TrendingUp },
+    { href: '/admin', label: t('nav.admin', 'SEOC Command'), icon: SlidersHorizontal },
+    { href: '/resources', label: language === 'hi' ? 'दिशानिर्देश व SOPs' : 'Awareness & SOPs', icon: BookOpen },
   ];
 
   const roleLabel =
     currentUser?.role === 'ADMIN'
-      ? 'SEOC Admin'
+      ? (language === 'hi' ? 'SEOC प्रशासक' : 'SEOC Admin')
       : currentUser?.role === 'STAFF'
-      ? 'NDRF Staff'
-      : 'Citizen Guest';
+      ? (language === 'hi' ? 'NDRF स्टाफ' : 'NDRF Staff')
+      : (language === 'hi' ? 'नागरिक दर्शक' : 'Citizen Guest');
 
   const roleBadgeColor =
     currentUser?.role === 'ADMIN'
@@ -88,6 +91,10 @@ export default function Navbar() {
       : currentUser?.role === 'STAFF'
       ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30'
       : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'hi' : 'en');
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md transition-colors">
@@ -99,39 +106,47 @@ export default function Navbar() {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
           </span>
           <span className="font-bold tracking-wider uppercase text-[10px] bg-red-950/50 px-1.5 py-0.5 rounded">
-            Live Warning
+            {language === 'hi' ? 'लाइव चेतावनी' : 'Live Warning'}
           </span>
           <span className="truncate">
-            Wayanad Escarpment: Extreme Debris Flow Warning | 38 Habitations on Pre-Evacuation Alert | Kosi River: Amber Alert Level
+            {language === 'hi'
+              ? 'वायनाड ढलान: भारी मलबा बहाव चेतावनी | 38 बस्तियां उच्च सतर्कता पर | कोसी बेसिन: एम्बर अलर्ट'
+              : 'Wayanad Escarpment: Extreme Debris Flow Warning | 38 Habitations on Pre-Evacuation Alert | Kosi River: Amber Alert Level'}
           </span>
         </div>
         <div className="hidden md:flex items-center space-x-4 shrink-0 text-slate-100 text-[11px] font-mono">
           <span>SYS CLOCK: {currentTime || 'SYNCING...'}</span>
           <span className="bg-emerald-500/20 text-emerald-200 px-1.5 py-0.5 rounded border border-emerald-400/30">
-            SATELLITE & SENSORS ONLINE
+            SAT-FEED: ACTIVE
           </span>
         </div>
       </div>
 
-      {/* Main Navbar */}
+      {/* Main Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Brand Logo */}
+          {/* Logo & Brand */}
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-amber-600 flex items-center justify-center text-white shadow-lg shadow-red-500/20 group-hover:scale-105 transition-transform">
-              <ShieldAlert className="w-6 h-6 animate-pulse" />
+            <div className="relative">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 via-rose-600 to-amber-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-red-600/30 group-hover:scale-105 transition-transform">
+                D
+              </div>
+              <span className="absolute -bottom-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border-2 border-white dark:border-slate-950"></span>
+              </span>
             </div>
             <div className="flex flex-col">
               <div className="flex items-center space-x-1.5">
-                <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-red-600 via-amber-500 to-orange-600 bg-clip-text text-transparent">
-                  DHRISTI
+                <span className="font-black text-lg tracking-tight text-slate-900 dark:text-white group-hover:text-red-500 transition-colors">
+                  {language === 'hi' ? 'दृष्टि (DHRISTI)' : 'DHRISTI'}
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/60">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20 uppercase tracking-wider">
                   Geo-Intel
                 </span>
               </div>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 tracking-tight hidden sm:block">
-                Mapping Risk, Protecting Lives
+                {language === 'hi' ? 'आपदा जोखिम पहचान, जीवन रक्षा' : 'Mapping Risk, Protecting Lives'}
               </span>
             </div>
           </Link>
@@ -158,8 +173,18 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Actions: Police SOS, Auth Badge, Theme Toggle, Siren, SOS Trigger */}
+          {/* Actions: Language Toggle, Police SOS, Auth Badge, Theme Toggle, Siren, SOS Trigger */}
           <div className="flex items-center space-x-2 sm:space-x-2.5">
+            {/* Language Switcher Button (EN / हिन्दी) */}
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-all hover:scale-105"
+              title="Change Language (English / हिन्दी)"
+            >
+              <span className="text-sm">🌐</span>
+              <span className="font-bold">{language === 'en' ? 'हिन्दी' : 'English'}</span>
+            </button>
+
             {/* Police SOS Button */}
             <button
               onClick={openPoliceModal}
@@ -167,7 +192,7 @@ export default function Navbar() {
               title="Dispatch SOS to Nearest Police Station & Government Numbers"
             >
               <Siren className="w-3.5 h-3.5 animate-bounce" />
-              <span className="hidden sm:inline">Police SOS</span>
+              <span className="hidden sm:inline">{language === 'hi' ? 'पुलिस 112' : 'Police SOS'}</span>
             </button>
 
             {/* Auth / Role Indicator */}

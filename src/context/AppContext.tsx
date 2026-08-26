@@ -6,6 +6,8 @@ import confetti from 'canvas-confetti';
 
 import { initialCitizenSosBeacons } from '@/data/sosData';
 
+import { Language, translations, getTranslation } from '@/i18n/translations';
+
 export type UserRole = 'ADMIN' | 'STAFF' | 'CITIZEN';
 
 export interface UserSession {
@@ -24,6 +26,11 @@ export type MapTileProvider =
   | 'osm';
 
 interface AppContextType {
+  // Language & Localization (English / Hindi)
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string, fallback?: string) => string;
+
   // Theme
   isDarkMode: boolean;
   toggleTheme: () => void;
@@ -97,6 +104,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const [language, setLanguageState] = useState<Language>('en');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
 
   // Authentication State
@@ -132,6 +140,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [selectedHazard, setSelectedHazard] = useState<HazardType | 'all'>('all');
   const [selectedRisk, setSelectedRisk] = useState<RiskLevel | 'all'>('all');
+
+  const setLanguage = useCallback((lang: Language) => {
+    setLanguageState(lang);
+    try {
+      localStorage.setItem('dhristi_lang', lang);
+    } catch {}
+  }, []);
+
+  const t = useCallback(
+    (key: string, fallback?: string): string => {
+      return getTranslation(key, language) || fallback || key;
+    },
+    [language]
+  );
+
+  // Load language preference from localStorage
+  useEffect(() => {
+    try {
+      const savedLang = localStorage.getItem('dhristi_lang') as Language;
+      if (savedLang === 'en' || savedLang === 'hi') {
+        setLanguageState(savedLang);
+      }
+    } catch {}
+  }, []);
 
   // Trigger login modal on initial site entry if not already logged in
   useEffect(() => {
@@ -417,6 +449,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider
       value={{
+        language,
+        setLanguage,
+        t,
         isDarkMode,
         toggleTheme,
         currentUser,

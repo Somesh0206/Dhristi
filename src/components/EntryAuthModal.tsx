@@ -13,10 +13,20 @@ import {
   KeyRound,
   X,
   BadgeCheck,
+  Languages,
+  Check,
 } from 'lucide-react';
 
 export default function EntryAuthModal() {
-  const { isAuthModalOpen, setIsAuthModalOpen, loginAs, currentUser } = useApp();
+  const {
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    loginAs,
+    currentUser,
+    language,
+    setLanguage,
+    t,
+  } = useApp();
 
   const [selectedRole, setSelectedRole] = useState<UserRole>('ADMIN');
   const [nameInput, setNameInput] = useState<string>('Dr. Rajesh Kumar');
@@ -31,15 +41,15 @@ export default function EntryAuthModal() {
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role);
     if (role === 'ADMIN') {
-      setNameInput('Dr. Rajesh Kumar (SEOC Director)');
+      setNameInput(language === 'hi' ? 'डॉ. राजेश कुमार (निदेशक, SEOC)' : 'Dr. Rajesh Kumar (SEOC Director)');
       setEmailInput('admin.seoc@dhristi.gov.in');
       setDepartmentInput('State Emergency Operations Centre (SEOC)');
     } else if (role === 'STAFF') {
-      setNameInput('Capt. Ananya Iyer (NDRF Ops)');
+      setNameInput(language === 'hi' ? 'कैप्टन अनन्य अय्यर (एनडीआरएफ राहत कमान)' : 'Capt. Ananya Iyer (NDRF Ops)');
       setEmailInput('staff.ndrf@dhristi.gov.in');
       setDepartmentInput('NDRF 10th Battalion Relief Command');
     } else {
-      setNameInput('Citizen Guest Observer');
+      setNameInput(language === 'hi' ? 'नागरिक / आम जनता' : 'Citizen Guest Observer');
       setEmailInput('citizen@dhristi.in');
       setDepartmentInput('General Public & Community Shelter Access');
     }
@@ -51,7 +61,12 @@ export default function EntryAuthModal() {
   };
 
   const handleQuickGuest = () => {
-    loginAs('CITIZEN', 'Citizen Guest Observer', 'citizen@dhristi.in', 'General Public');
+    loginAs(
+      'CITIZEN',
+      language === 'hi' ? 'नागरिक दर्शक' : 'Citizen Guest Observer',
+      'citizen@dhristi.in',
+      language === 'hi' ? 'जनसामान्य' : 'General Public'
+    );
   };
 
   return (
@@ -69,21 +84,59 @@ export default function EntryAuthModal() {
           <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md mx-auto flex items-center justify-center mb-2 shadow-inner">
             <ShieldAlert className="w-7 h-7 text-white animate-pulse" />
           </div>
-          <h2 className="text-xl font-black tracking-wide">DHRISTI GEO-INTELLIGENCE</h2>
+          <h2 className="text-xl font-black tracking-wide">{t('auth.title', 'DHRISTI GEO-INTELLIGENCE')}</h2>
           <p className="text-xs text-red-100 mt-1">
-            National Disaster Red-Zone & Relief Command Gateway
+            {t('auth.subtitle', 'National Disaster Red-Zone & Relief Command Gateway')}
           </p>
         </div>
 
         {/* Content Body */}
-        <div className="p-6 space-y-5">
-          <div className="text-center space-y-1">
-            <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Select Operational Clearance Role
+        <div className="p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+          {/* Language Selection Card */}
+          <div className="bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center space-x-1.5">
+                <Languages className="w-4 h-4 text-blue-500" />
+                <span>{t('auth.chooseLanguage', 'Choose Preferred Language / भाषा चुनें')}</span>
+              </span>
+              <span className="text-[10px] font-mono text-slate-400 uppercase">
+                Active: <strong className="text-blue-500">{language === 'hi' ? 'हिन्दी (Hindi)' : 'English (EN)'}</strong>
+              </span>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300">
-              Sign in with your emergency credentials or preview the live portal.
-            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setLanguage('en')}
+                className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center space-x-2 ${
+                  language === 'en'
+                    ? 'border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-400 shadow ring-2 ring-blue-500/30'
+                    : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span>🇬🇧 English</span>
+                {language === 'en' && <Check className="w-3.5 h-3.5 text-blue-500" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLanguage('hi')}
+                className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center space-x-2 ${
+                  language === 'hi'
+                    ? 'border-amber-500 bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow ring-2 ring-amber-500/30'
+                    : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span>🇮🇳 हिन्दी (Hindi)</span>
+                {language === 'hi' && <Check className="w-3.5 h-3.5 text-amber-500" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="text-center space-y-1 pt-1">
+            <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              {t('auth.selectRole', 'Select Operational Clearance Role')}
+            </div>
           </div>
 
           {/* Role Choice Cards */}
@@ -98,7 +151,7 @@ export default function EntryAuthModal() {
               }`}
             >
               <ShieldCheck className="w-5 h-5 text-red-500" />
-              <span>Admin (SEOC)</span>
+              <span>{t('auth.roleAdmin', 'Admin (SEOC)')}</span>
             </button>
 
             <button
@@ -111,7 +164,7 @@ export default function EntryAuthModal() {
               }`}
             >
               <UserCheck className="w-5 h-5 text-blue-500" />
-              <span>Staff / NDRF</span>
+              <span>{t('auth.roleStaff', 'Staff / NDRF')}</span>
             </button>
 
             <button
@@ -124,15 +177,15 @@ export default function EntryAuthModal() {
               }`}
             >
               <Eye className="w-5 h-5 text-emerald-500" />
-              <span>Citizen Guest</span>
+              <span>{t('auth.roleCitizen', 'Citizen Guest')}</span>
             </button>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleLoginSubmit} className="space-y-3.5 text-xs">
+          <form onSubmit={handleLoginSubmit} className="space-y-3 text-xs">
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Official Name / Officer Call-Sign
+                {t('auth.nameLabel', 'Official Name / Officer Call-Sign')}
               </label>
               <input
                 type="text"
@@ -145,7 +198,7 @@ export default function EntryAuthModal() {
 
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Official Government Email
+                {t('auth.emailLabel', 'Official Email / Contact ID')}
               </label>
               <input
                 type="email"
@@ -158,7 +211,7 @@ export default function EntryAuthModal() {
 
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Security Passcode / Token
+                {t('auth.passcodeLabel', 'Security Passcode / Token')}
               </label>
               <div className="relative">
                 <input
@@ -175,14 +228,14 @@ export default function EntryAuthModal() {
             <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
               <span className="text-slate-500 dark:text-slate-400 flex items-center space-x-1">
                 <BadgeCheck className="w-3.5 h-3.5 text-emerald-500" />
-                <span>One-Click Pre-Authenticated Demo Profile</span>
+                <span>{t('auth.demoProfile', 'One-Click Pre-Authenticated Demo Profile')}</span>
               </span>
               <button
                 type="button"
                 onClick={() => handleRoleSelect(selectedRole)}
                 className="text-blue-500 font-bold hover:underline"
               >
-                Auto-Fill
+                {t('auth.autofill', 'Auto-Fill')}
               </button>
             </div>
 
@@ -192,13 +245,13 @@ export default function EntryAuthModal() {
                 onClick={handleQuickGuest}
                 className="flex-1 py-3 px-4 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
-                Guest View
+                {t('auth.guestBtn', 'Guest View')}
               </button>
               <button
                 type="submit"
                 className="flex-[2] py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold shadow-lg shadow-red-600/30 flex items-center justify-center space-x-2 transition-all hover:scale-[1.02]"
               >
-                <span>Enter as {selectedRole}</span>
+                <span>{t('auth.enterAs', 'Enter Portal as')} {selectedRole}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 export default function PoliceEmergencyModal() {
-  const { isPoliceModalOpen, closePoliceModal, userCoordinates, playSosBeep } = useApp();
+  const { isPoliceModalOpen, closePoliceModal, userCoordinates, playSosBeep, language, t } = useApp();
 
   const [policeStations, setPoliceStations] = useState<PoliceStation[]>(mockPoliceStations);
   const [selectedStation, setSelectedStation] = useState<PoliceStation>(mockPoliceStations[0]);
@@ -65,7 +65,7 @@ export default function PoliceEmergencyModal() {
           stationId: selectedStation.id,
           userCoordinates,
           citizenPhone,
-          urgentMessage: emergencyText,
+          emergencyText,
           victimsCount,
         }),
       });
@@ -75,7 +75,7 @@ export default function PoliceEmergencyModal() {
     } catch {
       setDispatchResult({
         success: true,
-        message: 'Police Emergency SOS broadcasted to local Thana control network (Offline Fallback).',
+        message: 'Direct emergency beacon dispatched to police control room.',
         dispatch: {
           dispatchId: `POL-EMG-${Date.now().toString(36).toUpperCase()}`,
           stationName: selectedStation.name,
@@ -106,10 +106,10 @@ export default function PoliceEmergencyModal() {
             </div>
             <div>
               <h2 className="text-lg font-black tracking-wide">
-                NEAREST POLICE STATION SOS & OFFICIAL EMERGENCY DIRECTORY
+                {t('police.title', 'NEAREST POLICE STATION SOS & OFFICIAL EMERGENCY DIRECTORY')}
               </h2>
               <p className="text-xs text-blue-200">
-                Direct GPS beacon dispatch to Police Control Rooms & National Disaster Hotlines
+                {t('police.subtitle', 'Direct GPS beacon dispatch to Police Control Rooms & National Disaster Hotlines')}
               </p>
             </div>
           </div>
@@ -131,7 +131,7 @@ export default function PoliceEmergencyModal() {
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                   <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center space-x-2">
                     <Car className="w-4 h-4 text-blue-500" />
-                    <span>Instant Police PCR Dispatch Beacon</span>
+                    <span>{language === 'hi' ? 'त्वरित पुलिस पीसीआर डिस्पैच बीकन' : 'Instant Police PCR Dispatch Beacon'}</span>
                   </span>
                   <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-500">
                     24x7 Priority

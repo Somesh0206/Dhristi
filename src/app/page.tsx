@@ -34,6 +34,8 @@ export default function HomePage() {
     isLiveTelemetrySimulation,
     toggleTelemetrySimulation,
     activeAlertCount,
+    language,
+    t,
   } = useApp();
 
   const redZonesCount = mockHazardZones.filter((z) => z.riskLevel === 'RED').length;
@@ -83,28 +85,37 @@ export default function HomePage() {
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
             <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-wider animate-pulse">
               <Radio className="w-4 h-4 text-red-500" />
-              <span>CRITICAL ALERT: SOUTH-WEST & HIMALAYAN DEBRIS HAZARDS ACTIVE</span>
+              <span>
+                {language === 'hi'
+                  ? 'अति-महत्वपूर्ण चेतावनी: दक्षिण-पश्चिम एवं हिमालयी मलबा प्रवाह सक्रिय'
+                  : 'CRITICAL ALERT: SOUTH-WEST & HIMALAYAN DEBRIS HAZARDS ACTIVE'}
+              </span>
             </div>
 
             <AudioVoiceAdvisor
-              textToSpeak="Attention all residents. This is an official emergency bulletin from Dhristi Geo-Intelligence. Critical debris flow and flood warnings are active in the Wayanad and Chamoli sectors. 38 habitations are under mandatory evacuation. Please check your assigned safe shelter immediately."
-              label="Listen to Audio Emergency Broadcast"
+              textToSpeak={
+                language === 'hi'
+                  ? 'सभी नागरिकों का ध्यान दें। यह दृष्टि भू-स्थानिक सुरक्षा प्रणाली का आधिकारिक आपातकालीन बुलेटिन है। वायनाड और चमोली सेक्टरों में भारी मलबा बहाव और बाढ़ की चेतावनी सक्रिय है। कृपया तुरंत अपने आवंटित सुरक्षित आश्रय की जांच करें।'
+                  : 'Attention all residents. This is an official emergency bulletin from Dhristi Geo-Intelligence. Critical debris flow and flood warnings are active in the Wayanad and Chamoli sectors. 38 habitations are under mandatory evacuation. Please check your assigned safe shelter immediately.'
+              }
+              label={language === 'hi' ? 'आपातकालीन ऑडियो प्रसारण सुनें' : 'Listen to Audio Emergency Broadcast'}
             />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 space-y-5">
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
-                Mapping Risk,{' '}
+                {language === 'hi' ? 'आपदा जोखिम पहचान,' : 'Mapping Risk,'}{' '}
                 <span className="bg-gradient-to-r from-red-500 via-amber-400 to-orange-500 bg-clip-text text-transparent">
-                  Protecting Lives:
+                  {language === 'hi' ? 'जीवन रक्षा:' : 'Protecting Lives:'}
                 </span>{' '}
-                Smart Geo-Intelligence
+                {language === 'hi' ? 'स्मार्ट भू-स्थानिक कमान' : 'Smart Geo-Intelligence'}
               </h1>
               <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed font-medium">
-                <span className="font-semibold text-slate-900 dark:text-white">Dhristi</span> is an enterprise disaster
-                early-warning and humanitarian evacuation hub. Real-time GIS slope & flood telemetry, carrying capacity
-                stress assessment, and immediate relocation routing for vulnerable habitations.
+                {t(
+                  'hero.subtitle',
+                  'Real-time geospatial intelligence, carrying capacity assessment of safe havens (Schools, Hospitals, Stadiums & Govt Offices), and AI predictive evacuation dispatch.'
+                )}
               </p>
 
               {/* Action Buttons */}
@@ -114,7 +125,7 @@ export default function HomePage() {
                   className="px-5 py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm tracking-wide shadow-lg shadow-red-600/30 flex items-center space-x-2 transition-all hover:scale-105"
                 >
                   <MapPin className="w-4 h-4" />
-                  <span>Launch Red-Zone GIS Map</span>
+                  <span>{t('hero.btnRadar', 'Inspect 3D GIS Hazard Zones')}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
 
@@ -123,7 +134,7 @@ export default function HomePage() {
                   className="px-5 py-3.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-sm tracking-wide border border-slate-700 flex items-center space-x-2 transition-all hover:scale-105"
                 >
                   <Compass className="w-4 h-4 text-amber-400" />
-                  <span>Find My Safe Evacuation Hub</span>
+                  <span>{t('hero.btnEvacuate', 'Find My Safe Shelter Route')}</span>
                 </Link>
 
                 <button
@@ -131,7 +142,7 @@ export default function HomePage() {
                   className="px-5 py-3.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-700 dark:text-rose-300 font-bold text-sm border border-rose-500/40 flex items-center space-x-2 transition-all"
                 >
                   <AlertTriangle className="w-4 h-4 text-rose-500" />
-                  <span>Broadcast SOS</span>
+                  <span>{t('hero.btnSos', 'Trigger Immediate Citizen SOS')}</span>
                 </button>
 
                 <button
@@ -140,7 +151,7 @@ export default function HomePage() {
                   title="Export Intelligence Report (JSON)"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Export Report</span>
+                  <span>{language === 'hi' ? 'रिपोर्ट डाउनलोड' : 'Export Report'}</span>
                 </button>
               </div>
             </div>
@@ -226,7 +237,7 @@ export default function HomePage() {
           <div className="glass-panel p-5 rounded-2xl border-l-4 border-l-red-500 relative overflow-hidden">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Active Red Zones
+                {t('stat.activeRedZones', 'Critical Red Zones')}
               </span>
               <div className="p-2 rounded-xl bg-red-500/10 text-red-500">
                 <ShieldAlert className="w-5 h-5" />
@@ -236,14 +247,14 @@ export default function HomePage() {
               {redZonesCount}
             </div>
             <div className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center space-x-1">
-              <span>Wayanad & Joshimath High Risk</span>
+              <span>{language === 'hi' ? 'वायनाड एवं चमोली उच्च जोखिम' : 'Wayanad & Chamoli High Risk'}</span>
             </div>
           </div>
 
           <div className="glass-panel p-5 rounded-2xl border-l-4 border-l-amber-500 relative overflow-hidden">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Critical Habitations
+                {t('stat.monitoredHabitations', 'Critical Habitations')}
               </span>
               <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
                 <AlertTriangle className="w-5 h-5" />
@@ -253,14 +264,14 @@ export default function HomePage() {
               {criticalHabitations.length}
             </div>
             <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-              Immediate Relocation Order Active
+              {language === 'hi' ? 'अनिवार्य निकासी आदेश सक्रिय' : 'Immediate Relocation Order Active'}
             </div>
           </div>
 
           <div className="glass-panel p-5 rounded-2xl border-l-4 border-l-purple-500 relative overflow-hidden">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Population in Red Zones
+                {t('stat.relocationUrgency', 'Population in Red Zones')}
               </span>
               <div className="p-2 rounded-xl bg-purple-500/10 text-purple-500">
                 <Users className="w-5 h-5" />
@@ -270,14 +281,14 @@ export default function HomePage() {
               {totalPopulationAtRisk.toLocaleString()}
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              5,490 Citizens mapped in immediate peril
+              {language === 'hi' ? '5,490 नागरिक तत्काल जोखिम क्षेत्र में' : '5,490 Citizens mapped in immediate peril'}
             </div>
           </div>
 
           <div className="glass-panel p-5 rounded-2xl border-l-4 border-l-emerald-500 relative overflow-hidden">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Available Safe Capacity
+                {t('stat.safeShelterCapacity', 'Available Safe Capacity')}
               </span>
               <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
                 <Building2 className="w-5 h-5" />
@@ -287,7 +298,7 @@ export default function HomePage() {
               {remainingSafeCapacity.toLocaleString()}
             </div>
             <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
-              Across 6 Multi-Hazard Shelters
+              {language === 'hi' ? '6 बहु-आपदा सुरक्षित आश्रय स्थलों में' : 'Across 6 Multi-Hazard Shelters'}
             </div>
           </div>
         </div>
@@ -298,10 +309,12 @@ export default function HomePage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-              Integrated Disaster Geo-Intelligence Modules
+              {language === 'hi' ? 'एकीकृत आपदा भू-स्थानिक सुरक्षा मॉड्यूल' : 'Integrated Disaster Geo-Intelligence Modules'}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              End-to-end hazard zone mapping, real-time carrying capacity, and intelligent relief logistics
+              {language === 'hi'
+                ? 'रेड-ज़ोन मैपिंग, सुरक्षित आश्रयों की वहन क्षमता और त्वरित सड़क निकासी लॉजिस्टिक्स'
+                : 'End-to-end hazard zone mapping, real-time carrying capacity, and intelligent relief logistics'}
             </p>
           </div>
         </div>
