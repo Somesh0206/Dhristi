@@ -18,13 +18,23 @@ import {
   Layers,
   Thermometer,
   CloudRain,
-  Eye,
+  Download,
+  Volume2,
+  Zap,
 } from 'lucide-react';
 import { mockHabitations, mockHazardZones } from '@/data/zonesData';
 import { mockShelters } from '@/data/sheltersData';
+import RadarScanner from '@/components/RadarScanner';
+import AudioVoiceAdvisor from '@/components/AudioVoiceAdvisor';
 
 export default function HomePage() {
-  const { openSosModal } = useApp();
+  const {
+    openSosModal,
+    simulatedTelemetry,
+    isLiveTelemetrySimulation,
+    toggleTelemetrySimulation,
+    activeAlertCount,
+  } = useApp();
 
   const redZonesCount = mockHazardZones.filter((z) => z.riskLevel === 'RED').length;
   const criticalHabitations = mockHabitations.filter((h) => h.immediateRelocationNeeded);
@@ -36,22 +46,54 @@ export default function HomePage() {
   const totalAllocatedOccupancy = mockShelters.reduce((acc, curr) => acc + curr.allocatedOccupancy, 0);
   const remainingSafeCapacity = totalSafeCapacity - totalAllocatedOccupancy;
 
+  const handleExportDataReport = () => {
+    const reportData = {
+      platform: 'Dhristi Geo-Intelligence Platform',
+      generatedAt: new Date().toISOString(),
+      systemStatus: 'ONLINE_ACTIVE',
+      kpis: {
+        activeRedZones: redZonesCount,
+        criticalHabitations: criticalHabitations.length,
+        populationInRedZones: totalPopulationAtRisk,
+        availableSafeCapacity: remainingSafeCapacity,
+      },
+      liveSensorTelemetry: simulatedTelemetry,
+      activeRedZones: mockHazardZones.filter((z) => z.riskLevel === 'RED'),
+      criticalHabitations: criticalHabitations,
+      safeSheltersOverview: mockShelters,
+    };
+
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dhristi-disaster-intelligence-report-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+  };
+
   return (
     <div className="space-y-10 pb-16">
-      {/* Hero Section with Glassmorphism & Radar visuals */}
+      {/* Hero Section with Glassmorphism & Radar Visuals */}
       <section className="relative overflow-hidden bg-gradient-to-b from-red-950/20 via-slate-900/40 to-transparent pt-10 pb-12 px-4 sm:px-6 lg:px-8 border-b border-slate-200/80 dark:border-slate-800/80">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
         <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
         <div className="max-w-7xl mx-auto">
-          {/* Status Badge */}
-          <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-wider mb-6 animate-pulse">
-            <Radio className="w-4 h-4 text-red-500" />
-            <span>CRITICAL ALERT: SOUTH-WEST & HIMALAYAN DEBRIS HAZARDS ACTIVE</span>
+          {/* Status Badge & Voice Advisor */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-wider animate-pulse">
+              <Radio className="w-4 h-4 text-red-500" />
+              <span>CRITICAL ALERT: SOUTH-WEST & HIMALAYAN DEBRIS HAZARDS ACTIVE</span>
+            </div>
+
+            <AudioVoiceAdvisor
+              textToSpeak="Attention all residents. This is an official emergency bulletin from Dhristi Geo-Intelligence. Critical debris flow and flood warnings are active in the Wayanad and Chamoli sectors. 38 habitations are under mandatory evacuation. Please check your assigned safe shelter immediately."
+              label="Listen to Audio Emergency Broadcast"
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-8 space-y-5">
+            <div className="lg:col-span-7 space-y-5">
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
                 Mapping Risk,{' '}
                 <span className="bg-gradient-to-r from-red-500 via-amber-400 to-orange-500 bg-clip-text text-transparent">
@@ -59,8 +101,8 @@ export default function HomePage() {
                 </span>{' '}
                 Smart Geo-Intelligence
               </h1>
-              <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
-                <span className="font-semibold text-slate-900 dark:text-white">Dhristi</span> is an intelligent disaster
+              <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed font-medium">
+                <span className="font-semibold text-slate-900 dark:text-white">Dhristi</span> is an enterprise disaster
                 early-warning and humanitarian evacuation hub. Real-time GIS slope & flood telemetry, carrying capacity
                 stress assessment, and immediate relocation routing for vulnerable habitations.
               </p>
@@ -91,61 +133,86 @@ export default function HomePage() {
                   <AlertTriangle className="w-4 h-4 text-rose-500" />
                   <span>Broadcast SOS</span>
                 </button>
+
+                <button
+                  onClick={handleExportDataReport}
+                  className="px-3.5 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-300 dark:border-slate-700 flex items-center space-x-1.5 transition-colors"
+                  title="Export Intelligence Report (JSON)"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Export Report</span>
+                </button>
               </div>
             </div>
 
-            {/* Live System Telemetry Card */}
-            <div className="lg:col-span-4">
-              <div className="glass-panel rounded-2xl p-6 border-red-500/30 relative overflow-hidden">
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+            {/* Radar Visual & Live Telemetry Card (Right 5 Cols) */}
+            <div className="lg:col-span-5 space-y-4">
+              <RadarScanner />
+
+              <div className="glass-panel rounded-2xl p-5 border-red-500/30 relative overflow-hidden">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3">
                   <div className="flex items-center space-x-2">
                     <Activity className="w-4 h-4 text-red-500 animate-pulse" />
                     <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
-                      Live Telemetry Matrix
+                      Live Telemetry Stream
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30">
-                    REALTIME FEED
-                  </span>
+                  <button
+                    onClick={toggleTelemetrySimulation}
+                    className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-colors ${
+                      isLiveTelemetrySimulation
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold'
+                        : 'bg-slate-200 dark:bg-slate-800 text-slate-400 border-slate-700'
+                    }`}
+                  >
+                    {isLiveTelemetrySimulation ? '● LIVE FLUCTUATION ON' : 'PAUSED'}
+                  </button>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-100 dark:bg-slate-800/60">
-                    <span className="text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
-                      <CloudRain className="w-3.5 h-3.5 text-blue-500" />
-                      <span>Peak Rain Intensity</span>
-                    </span>
-                    <span className="font-mono font-bold text-red-500">52.4 mm/hr (Chooralmala)</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800/80">
+                    <div className="text-[10px] text-slate-400 flex items-center space-x-1">
+                      <CloudRain className="w-3 h-3 text-blue-500" />
+                      <span>Rainfall Peak</span>
+                    </div>
+                    <div className="font-mono font-black text-sm text-blue-500 mt-0.5">
+                      {simulatedTelemetry.rainfallMmHr} mm/hr
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-100 dark:bg-slate-800/60">
-                    <span className="text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
-                      <Thermometer className="w-3.5 h-3.5 text-amber-500" />
-                      <span>Pore Pressure Stress</span>
-                    </span>
-                    <span className="font-mono font-bold text-amber-500">142.1 kPa (Critical)</span>
+                  <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800/80">
+                    <div className="text-[10px] text-slate-400 flex items-center space-x-1">
+                      <Thermometer className="w-3 h-3 text-amber-500" />
+                      <span>Pore Pressure</span>
+                    </div>
+                    <div className="font-mono font-black text-sm text-amber-500 mt-0.5">
+                      {simulatedTelemetry.poreWaterKPa} kPa
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-100 dark:bg-slate-800/60">
-                    <span className="text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
-                      <Activity className="w-3.5 h-3.5 text-purple-500" />
-                      <span>Seismic Tremor Peak</span>
-                    </span>
-                    <span className="font-mono font-bold text-purple-400">3.2 M (Joshimath Fault)</span>
+                  <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800/80">
+                    <div className="text-[10px] text-slate-400 flex items-center space-x-1">
+                      <Activity className="w-3 h-3 text-purple-500" />
+                      <span>Seismic Tremor</span>
+                    </div>
+                    <div className="font-mono font-black text-sm text-purple-400 mt-0.5">
+                      {simulatedTelemetry.seismicMagnitude} M
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-100 dark:bg-slate-800/60">
-                    <span className="text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
-                      <Layers className="w-3.5 h-3.5 text-emerald-500" />
-                      <span>Soil Saturation Index</span>
-                    </span>
-                    <span className="font-mono font-bold text-red-500">98% (Liquefaction Zone)</span>
+                  <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800/80">
+                    <div className="text-[10px] text-slate-400 flex items-center space-x-1">
+                      <Layers className="w-3 h-3 text-emerald-500" />
+                      <span>Soil Saturation</span>
+                    </div>
+                    <div className="font-mono font-black text-sm text-emerald-500 mt-0.5">
+                      {simulatedTelemetry.soilSaturationPct}%
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                  <span>Sensors Reporting: 24/24</span>
-                  <span>Uplink: 4G + VSAT</span>
+                <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-500 dark:text-slate-400 font-mono text-center">
+                  {simulatedTelemetry.lastUpdated}
                 </div>
               </div>
             </div>
@@ -156,7 +223,6 @@ export default function HomePage() {
       {/* High-Level KPIs */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* KPI 1 */}
           <div className="glass-panel p-5 rounded-2xl border-l-4 border-l-red-500 relative overflow-hidden">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -174,7 +240,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* KPI 2 */}
           <div className="glass-panel p-5 rounded-2xl border-l-4 border-l-amber-500 relative overflow-hidden">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -192,7 +257,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* KPI 3 */}
           <div className="glass-panel p-5 rounded-2xl border-l-4 border-l-purple-500 relative overflow-hidden">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -210,7 +274,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* KPI 4 */}
           <div className="glass-panel p-5 rounded-2xl border-l-4 border-l-emerald-500 relative overflow-hidden">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -244,7 +307,6 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Module 1 */}
           <Link
             href="/red-zones"
             className="glass-panel-hover p-6 rounded-2xl group flex flex-col justify-between"
@@ -267,7 +329,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Module 2 */}
           <Link
             href="/relocation"
             className="glass-panel-hover p-6 rounded-2xl group flex flex-col justify-between"
@@ -290,7 +351,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Module 3 */}
           <Link
             href="/shelters"
             className="glass-panel-hover p-6 rounded-2xl group flex flex-col justify-between"
@@ -313,7 +373,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Module 4 */}
           <Link
             href="/predictions"
             className="glass-panel-hover p-6 rounded-2xl group flex flex-col justify-between"
@@ -336,7 +395,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Module 5 */}
           <Link
             href="/admin"
             className="glass-panel-hover p-6 rounded-2xl group flex flex-col justify-between"
@@ -359,7 +417,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Module 6 */}
           <Link
             href="/resources"
             className="glass-panel-hover p-6 rounded-2xl group flex flex-col justify-between"

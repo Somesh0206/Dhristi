@@ -1,7 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { SosAlert, IncidentReport, HazardType, RiskLevel } from '@/types';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { SosAlert, IncidentReport, HazardType, RiskLevel, SensorTelemetry } from '@/types';
+import confetti from 'canvas-confetti';
 
 interface AppContextType {
   // Theme
@@ -14,15 +15,15 @@ interface AppContextType {
   openSosModal: (tab?: 'citizen' | 'responder') => void;
   closeSosModal: () => void;
 
-  // SOS Alerts
+  // SOS Alerts (Synced with Backend /api/sos)
   sosAlerts: SosAlert[];
-  addSosAlert: (alert: Omit<SosAlert, 'id' | 'timestamp' | 'status'>) => void;
-  updateSosStatus: (id: string, status: 'PENDING' | 'DISPATCHED' | 'RESCUED') => void;
+  addSosAlert: (alert: Omit<SosAlert, 'id' | 'timestamp' | 'status'>) => Promise<void>;
+  updateSosStatus: (id: string, status: 'PENDING' | 'DISPATCHED' | 'RESCUED') => Promise<void>;
 
-  // Incident Reports
+  // Incident Reports (Synced with Backend /api/incidents)
   incidentReports: IncidentReport[];
-  addIncidentReport: (report: Omit<IncidentReport, 'id' | 'timestamp' | 'status' | 'upvotes'>) => void;
-  upvoteIncident: (id: string) => void;
+  addIncidentReport: (report: Omit<IncidentReport, 'id' | 'timestamp' | 'status' | 'upvotes'>) => Promise<void>;
+  upvoteIncident: (id: string) => Promise<void>;
 
   // User Location
   userCoordinates: [number, number];
@@ -31,10 +32,18 @@ interface AppContextType {
   requestUserLocation: () => Promise<void>;
   locationError: string | null;
 
-  // Emergency Siren Audio
+  // Emergency Siren Audio & Speech
   isSirenPlaying: boolean;
   toggleEmergencySiren: () => void;
   playSosBeep: () => void;
+
+  // Live Telemetry Fluctuation & Simulation
+  isLiveTelemetrySimulation: boolean;
+  toggleTelemetrySimulation: () => void;
+  simulatedTelemetry: SensorTelemetry;
+
+  // Celebration Fireworks / Confetti
+  triggerEvacuationCelebration: () => void;
 
   // Filters
   selectedHazard: HazardType | 'all';
@@ -46,93 +55,51 @@ interface AppContextType {
   activeAlertCount: number;
 }
 
-const initialSosAlerts: SosAlert[] = [
-  {
-    id: 'SOS-2026-001',
-    timestamp: '10 mins ago',
-    senderName: 'Vipin Chandran & Family',
-    senderPhone: '+91 94471 99201',
-    coordinates: [11.5492, 76.1265],
-    addressDescription: 'House #42, Near Meppadi Church Hill, Wayanad',
-    type: 'CITIZEN_SOS',
-    hazardContext: 'landslide',
-    status: 'DISPATCHED',
-    peopleCount: 4,
-    medicalAssistanceRequired: true,
-    notes: 'Elderly person with restricted mobility. Mud entry into ground floor.',
-  },
-  {
-    id: 'SOS-2026-002',
-    timestamp: '18 mins ago',
-    senderName: 'Manohar Semwal',
-    senderPhone: '+91 98371 12345',
-    coordinates: [30.5564, 79.5663],
-    addressDescription: 'Upper Market Block B, Sunil Ward, Joshimath',
-    type: 'CITIZEN_SOS',
-    hazardContext: 'earthquake',
-    status: 'PENDING',
-    peopleCount: 6,
-    medicalAssistanceRequired: false,
-    notes: 'Structural crack widened to 4 inches; door jammed.',
-  },
-  {
-    id: 'SOS-2026-003',
-    timestamp: '35 mins ago',
-    senderName: 'Rameshwar Mahato',
-    senderPhone: '+91 94311 88762',
-    coordinates: [26.1261, 86.6053],
-    addressDescription: 'Kosi Bandh Tola 3, Supaul, Bihar',
-    type: 'CITIZEN_SOS',
-    hazardContext: 'flood',
-    status: 'RESCUED',
-    peopleCount: 5,
-    medicalAssistanceRequired: false,
-    notes: 'Evacuated by SDRF Motorboat team #2 to Shelter SH-004.',
-  },
-];
-
-const initialIncidents: IncidentReport[] = [
-  {
-    id: 'INC-8891',
-    reporterName: 'Arjun K.',
-    contact: '+91 98471 00291',
-    coordinates: [11.545, 76.135],
-    hazardType: 'landslide',
-    severity: 'SEVERE',
-    description: 'Fresh slope cracks observed behind Tea Factory. Brown stream water discharge accelerating.',
-    timestamp: '25 mins ago',
-    status: 'VERIFIED',
-    upvotes: 14,
-  },
-  {
-    id: 'INC-8892',
-    reporterName: 'Sunita Devi',
-    contact: '+91 94310 99128',
-    coordinates: [26.128, 86.612],
-    hazardType: 'flood',
-    severity: 'MODERATE',
-    description: 'Minor culvert seepage near eastern spur #5. Local sandbagging team on site.',
-    timestamp: '1 hour ago',
-    status: 'VERIFIED',
-    upvotes: 8,
-  },
-];
-
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
   const [isSosModalOpen, setIsSosModalOpen] = useState<boolean>(false);
   const [sosModalTab, setSosModalTab] = useState<'citizen' | 'responder'>('citizen');
-  const [sosAlerts, setSosAlerts] = useState<SosAlert[]>(initialSosAlerts);
-  const [incidentReports, setIncidentReports] = useState<IncidentReport[]>(initialIncidents);
-  const [userCoordinates, setUserCoordinates] = useState<[number, number]>([11.5510, 76.1305]); // Default near Wayanad hotspot
+  const [sosAlerts, setSosAlerts] = useState<SosAlert[]>([]);
+  const [incidentReports, setIncidentReports] = useState<IncidentReport[]>([]);
+  const [userCoordinates, setUserCoordinates] = useState<[number, number]>([11.5510, 76.1305]);
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isSirenPlaying, setIsSirenPlaying] = useState<boolean>(false);
 
+  // Live Sensor Fluctuation state
+  const [isLiveTelemetrySimulation, setIsLiveTelemetrySimulation] = useState<boolean>(true);
+  const [simulatedTelemetry, setSimulatedTelemetry] = useState<SensorTelemetry>({
+    rainfallMmHr: 52.4,
+    poreWaterKPa: 142.1,
+    slopeDisplacementMm: 22.8,
+    seismicMagnitude: 1.8,
+    soilSaturationPct: 98,
+    lastUpdated: 'Live Stream Active',
+  });
+
   const [selectedHazard, setSelectedHazard] = useState<HazardType | 'all'>('all');
   const [selectedRisk, setSelectedRisk] = useState<RiskLevel | 'all'>('all');
+
+  // Fetch initial SOS alerts and Incidents from backend API
+  const fetchBackendData = useCallback(async () => {
+    try {
+      const [sosRes, incRes] = await Promise.all([
+        fetch('/api/sos').then((r) => r.json()),
+        fetch('/api/incidents').then((r) => r.json()),
+      ]);
+
+      if (sosRes.success) setSosAlerts(sosRes.alerts);
+      if (incRes.success) setIncidentReports(incRes.reports);
+    } catch {
+      console.warn('Backend API initial fetch fallback to local store');
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBackendData();
+  }, [fetchBackendData]);
 
   // Handle Dark mode class
   useEffect(() => {
@@ -143,7 +110,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isDarkMode]);
 
-  const toggleTheme = () => setIsDarkMode(prev => !prev);
+  // Dynamic Telemetry Pulse Simulation
+  useEffect(() => {
+    if (!isLiveTelemetrySimulation) return;
+    const interval = setInterval(() => {
+      setSimulatedTelemetry((prev) => {
+        const deltaRain = (Math.random() * 2.4 - 1.1).toFixed(1);
+        const deltaPore = (Math.random() * 1.6 - 0.7).toFixed(1);
+        const deltaSeismic = (Math.random() * 0.2 - 0.1).toFixed(1);
+
+        const newRain = Math.max(10, Math.min(95, parseFloat((prev.rainfallMmHr + parseFloat(deltaRain)).toFixed(1))));
+        const newPore = Math.max(50, Math.min(180, parseFloat((prev.poreWaterKPa + parseFloat(deltaPore)).toFixed(1))));
+        const newSeismic = Math.max(0.5, Math.min(4.5, parseFloat((prev.seismicMagnitude + parseFloat(deltaSeismic)).toFixed(1))));
+
+        return {
+          ...prev,
+          rainfallMmHr: newRain,
+          poreWaterKPa: newPore,
+          seismicMagnitude: newSeismic,
+          lastUpdated: 'Live Feed (' + new Date().toLocaleTimeString() + ')',
+        };
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isLiveTelemetrySimulation]);
+
+  const toggleTheme = () => setIsDarkMode((prev) => !prev);
+  const toggleTelemetrySimulation = () => setIsLiveTelemetrySimulation((prev) => !prev);
 
   const openSosModal = (tab: 'citizen' | 'responder' = 'citizen') => {
     setSosModalTab(tab);
@@ -152,34 +145,78 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const closeSosModal = () => setIsSosModalOpen(false);
 
-  const addSosAlert = (alert: Omit<SosAlert, 'id' | 'timestamp' | 'status'>) => {
-    const newAlert: SosAlert = {
-      ...alert,
-      id: `SOS-2026-${String(sosAlerts.length + 1).padStart(3, '0')}`,
-      timestamp: 'Just now',
-      status: 'PENDING',
-    };
-    setSosAlerts(prev => [newAlert, ...prev]);
+  const addSosAlert = async (alert: Omit<SosAlert, 'id' | 'timestamp' | 'status'>) => {
+    try {
+      const res = await fetch('/api/sos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(alert),
+      });
+      const data = await res.json();
+      if (data.success && data.alert) {
+        setSosAlerts((prev) => [data.alert, ...prev]);
+      }
+    } catch {
+      const fallback: SosAlert = {
+        ...alert,
+        id: `SOS-2026-${String(sosAlerts.length + 1).padStart(3, '0')}`,
+        timestamp: 'Just now',
+        status: 'PENDING',
+      };
+      setSosAlerts((prev) => [fallback, ...prev]);
+    }
     playSosBeep();
   };
 
-  const updateSosStatus = (id: string, status: 'PENDING' | 'DISPATCHED' | 'RESCUED') => {
-    setSosAlerts(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+  const updateSosStatus = async (id: string, status: 'PENDING' | 'DISPATCHED' | 'RESCUED') => {
+    try {
+      await fetch('/api/sos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alertId: id, status }),
+      });
+    } catch {
+      // offline fallback
+    }
+    setSosAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
   };
 
-  const addIncidentReport = (report: Omit<IncidentReport, 'id' | 'timestamp' | 'status' | 'upvotes'>) => {
-    const newIncident: IncidentReport = {
-      ...report,
-      id: `INC-${Math.floor(1000 + Math.random() * 9000)}`,
-      timestamp: 'Just now',
-      status: 'UNDER_REVIEW',
-      upvotes: 1,
-    };
-    setIncidentReports(prev => [newIncident, ...prev]);
+  const addIncidentReport = async (report: Omit<IncidentReport, 'id' | 'timestamp' | 'status' | 'upvotes'>) => {
+    try {
+      const res = await fetch('/api/incidents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(report),
+      });
+      const data = await res.json();
+      if (data.success && data.report) {
+        setIncidentReports((prev) => [data.report, ...prev]);
+      }
+    } catch {
+      const fallback: IncidentReport = {
+        ...report,
+        id: `INC-${Math.floor(1000 + Math.random() * 9000)}`,
+        timestamp: 'Just now',
+        status: 'UNDER_REVIEW',
+        upvotes: 1,
+      };
+      setIncidentReports((prev) => [fallback, ...prev]);
+    }
   };
 
-  const upvoteIncident = (id: string) => {
-    setIncidentReports(prev => prev.map(inc => inc.id === id ? { ...inc, upvotes: inc.upvotes + 1 } : inc));
+  const upvoteIncident = async (id: string) => {
+    try {
+      await fetch('/api/incidents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'UPVOTE', reportId: id }),
+      });
+    } catch {
+      // offline fallback
+    }
+    setIncidentReports((prev) =>
+      prev.map((inc) => (inc.id === id ? { ...inc, upvotes: inc.upvotes + 1 } : inc))
+    );
   };
 
   const requestUserLocation = async () => {
@@ -197,18 +234,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setIsLocating(false);
       },
       (err) => {
-        console.warn('Geolocation failed, keeping default coordinates:', err.message);
-        setLocationError(`Could not access GPS (${err.message}). Using regional simulation coordinates.`);
+        console.warn('Geolocation error:', err.message);
+        setLocationError(`Could not access GPS (${err.message}). Using Wayanad regional coordinates.`);
         setIsLocating(false);
       },
       { enableHighAccuracy: true, timeout: 8000 }
     );
   };
 
-  // Synthesized Web Audio API sound
   const playSosBeep = () => {
     try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
       const osc = ctx.createOscillator();
@@ -227,18 +264,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       osc.start();
       osc.stop(ctx.currentTime + 0.4);
     } catch {
-      // Audio context might be restricted before user gesture
+      // User gesture restrictions
     }
   };
 
   const toggleEmergencySiren = () => {
-    setIsSirenPlaying(prev => !prev);
+    setIsSirenPlaying((prev) => !prev);
     if (!isSirenPlaying) {
       playSosBeep();
     }
   };
 
-  const activeAlertCount = sosAlerts.filter(a => a.status === 'PENDING').length;
+  const triggerEvacuationCelebration = () => {
+    confetti({
+      particleCount: 120,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'],
+    });
+  };
+
+  const activeAlertCount = sosAlerts.filter((a) => a.status === 'PENDING').length;
 
   return (
     <AppContext.Provider
@@ -263,6 +309,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isSirenPlaying,
         toggleEmergencySiren,
         playSosBeep,
+        isLiveTelemetrySimulation,
+        toggleTelemetrySimulation,
+        simulatedTelemetry,
+        triggerEvacuationCelebration,
         selectedHazard,
         setSelectedHazard,
         selectedRisk,

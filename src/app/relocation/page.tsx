@@ -23,11 +23,14 @@ import {
   Activity,
   Users,
   Loader2,
+  Sparkles,
+  Mountain,
 } from 'lucide-react';
+import AudioVoiceAdvisor from '@/components/AudioVoiceAdvisor';
 
 // Distance calculation using Haversine formula
 function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // Earth radius in km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -44,12 +47,21 @@ function RelocationContent() {
   const searchParams = useSearchParams();
   const habIdParam = searchParams.get('habId');
 
-  const { userCoordinates, setUserCoordinates, requestUserLocation, isLocating, locationError, openSosModal } = useApp();
+  const {
+    userCoordinates,
+    setUserCoordinates,
+    requestUserLocation,
+    isLocating,
+    locationError,
+    openSosModal,
+    triggerEvacuationCelebration,
+  } = useApp();
 
   const [selectedHabitation, setSelectedHabitation] = useState<Habitation | null>(null);
   const [nearestShelter, setNearestShelter] = useState<Shelter>(mockShelters[0]);
   const [evacueeCount, setEvacueeCount] = useState<number>(1);
   const [evacuationMode, setEvacuationMode] = useState<'foot' | 'vehicle'>('vehicle');
+  const [hasCompletedEvacuation, setHasCompletedEvacuation] = useState<boolean>(false);
 
   // Pre-load from query param if passed
   useEffect(() => {
@@ -81,6 +93,7 @@ function RelocationContent() {
     });
 
     setNearestShelter(closest);
+    setHasCompletedEvacuation(false);
   }, [userCoordinates]);
 
   const distanceKm = calculateDistanceKm(
@@ -97,6 +110,23 @@ function RelocationContent() {
   const shelterAllocated = nearestShelter.allocatedOccupancy + evacueeCount;
   const remainingBuffer = Math.max(0, shelterCapacity - shelterAllocated);
   const stressIndex = Math.min(100, Math.round((shelterAllocated / shelterCapacity) * 100));
+
+  const handleSimulateArrival = async () => {
+    setHasCompletedEvacuation(true);
+    triggerEvacuationCelebration();
+
+    try {
+      await fetch('/api/shelters', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shelterId: nearestShelter.id, additionalEvacuees: evacueeCount }),
+      });
+    } catch {
+      // offline fallback
+    }
+  };
+
+  const voiceInstruction = `Your current position is located ${distanceKm} kilometers from ${nearestShelter.name}. Estimated evacuation travel time is ${etaMins} minutes via ${evacuationMode === 'foot' ? 'pedestrian path' : '4x4 transit vehicle'}. The shelter currently has ${remainingBuffer} safe beds available with ${nearestShelter.supplies.waterDays} days of potable water reserves.`;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -115,8 +145,10 @@ function RelocationContent() {
           </p>
         </div>
 
-        {/* Location Action */}
-        <div className="flex items-center space-x-2">
+        {/* Location Action & Voice Guidance */}
+        <div className="flex flex-wrap items-center gap-2">
+          <AudioVoiceAdvisor textToSpeak={voiceInstruction} label="Audio Route Directions" />
+
           <button
             onClick={requestUserLocation}
             disabled={isLocating}
@@ -132,6 +164,29 @@ function RelocationContent() {
         <div className="bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-300 p-3 rounded-xl text-xs flex items-center space-x-2">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           <span>{locationError}</span>
+        </div>
+      )}
+
+      {hasCompletedEvacuation && (
+        <div className="bg-emerald-500/20 border-2 border-emerald-500 text-emerald-900 dark:text-emerald-200 p-4 rounded-2xl flex items-center justify-between animate-in zoom-in-95 duration-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="font-black text-sm">Safe Check-In Confirmed!</div>
+              <div className="text-xs">
+                You have successfully arrived at {nearestShelter.name}. Your entry has been logged into the regional SEOC carrying capacity registry.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={triggerEvacuationCelebration}
+            className="px-3 py-1.5 bg-emerald-600 text-white font-bold rounded-lg text-xs flex items-center space-x-1 shadow"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Celebrate Safe Arrival</span>
+          </button>
         </div>
       )}
 
@@ -159,6 +214,32 @@ function RelocationContent() {
               habitations={mockHabitations}
               height="520px"
             />
+          </div>
+
+          {/* Elevation Profile & Corridor Metrics */}
+          <div className="glass-panel p-4 rounded-2xl space-y-3">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+              <span className="flex items-center space-x-1.5">
+                <Mountain className="w-4 h-4 text-amber-500" />
+                <span>Corridor Elevation Profile & Hazard Clearance</span>
+              </span>
+              <span className="text-emerald-500 font-mono">ALL CLEAR OF HIGH DEBRIS FLOWS</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+              <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800">
+                <div className="text-[10px] text-slate-400 font-sans">Start Elevation</div>
+                <div className="font-bold text-slate-900 dark:text-white">890m MSL</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800">
+                <div className="text-[10px] text-slate-400 font-sans">Shelter Elevation</div>
+                <div className="font-bold text-emerald-500">1,020m (Safe High-Ridge)</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800">
+                <div className="text-[10px] text-slate-400 font-sans">Max Route Slope</div>
+                <div className="font-bold text-blue-500">8.4° (Vehicle Paved)</div>
+              </div>
+            </div>
           </div>
 
           {/* Quick Simulation Presets */}
@@ -192,7 +273,6 @@ function RelocationContent() {
 
         {/* Right 4 Cols: Allocation & Carrying Capacity Breakdown */}
         <div className="lg:col-span-4 space-y-4">
-          {/* Assigned Evacuation Shelter Card */}
           <div className="glass-panel p-5 rounded-2xl border-blue-500/40 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <div>
@@ -341,14 +421,24 @@ function RelocationContent() {
               </div>
             </div>
 
-            {/* Trigger SOS from here */}
-            <button
-              onClick={() => openSosModal('citizen')}
-              className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-2 shadow-lg shadow-red-600/20"
-            >
-              <AlertTriangle className="w-4 h-4 animate-pulse" />
-              <span>Broadcast Evacuation SOS If Trapped</span>
-            </button>
+            {/* Arrival & SOS Buttons */}
+            <div className="space-y-2 pt-2">
+              <button
+                onClick={handleSimulateArrival}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-102"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Simulate Safe Check-In At Shelter</span>
+              </button>
+
+              <button
+                onClick={() => openSosModal('citizen')}
+                className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-2 shadow"
+              >
+                <AlertTriangle className="w-4 h-4 animate-pulse" />
+                <span>Broadcast Evacuation SOS If Trapped</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
