@@ -28,6 +28,8 @@ import {
   Eye,
   LogOut,
   Mic,
+  MessageSquare,
+  Lock,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -36,14 +38,10 @@ export default function Navbar() {
     isDarkMode,
     toggleTheme,
     openSosModal,
-    isSirenPlaying,
-    toggleEmergencySiren,
     activeAlertCount,
-    openPoliceModal,
     openVoiceAssistant,
     currentUser,
     setIsAuthModalOpen,
-    logout,
     language,
     setLanguage,
     t,
@@ -76,6 +74,7 @@ export default function Navbar() {
     { href: '/shelters', label: language === 'hi' ? 'सुरक्षित आश्रय' : 'Safe Havens', icon: Building2 },
     { href: '/relocation', label: language === 'hi' ? 'पुनर्वास मार्ग' : 'Relocation Guide', icon: TrendingUp },
     { href: '/predictions', label: language === 'hi' ? 'एआई पूर्वानुमान' : 'AI Predictions', icon: SlidersHorizontal },
+    { href: '/chat', label: language === 'hi' ? 'सुरक्षित चैट' : 'Secure Chat', icon: Lock },
     { href: '/resources', label: language === 'hi' ? 'आपदा गाइड' : 'SOP & Resources', icon: BookOpen },
     { href: '/admin', label: language === 'hi' ? 'नियंत्रण केंद्र' : 'SEOC Console', icon: ShieldAlert },
   ];
@@ -181,7 +180,7 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Actions: Language Toggle, Voice Assistant, Police/SOS, Auth Badge, Theme Toggle */}
+          {/* Actions: Language Toggle, Voice Assistant (Vaani), Auth Badge, Theme Toggle, and ONE Combined SOS Button */}
           <div className="flex items-center space-x-1.5 sm:space-x-2">
             {/* Language Switcher Button (EN / हिन्दी) */}
             <button
@@ -193,24 +192,14 @@ export default function Navbar() {
               <span className="font-bold">{language === 'en' ? 'हिन्दी' : 'English'}</span>
             </button>
 
-            {/* Voice Assistant Trigger Button */}
+            {/* Voice Assistant Trigger Button (VAANI AI) */}
             <button
               onClick={openVoiceAssistant}
-              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md shadow-violet-600/20 transition-all hover:scale-105"
-              title="Open Dhristi AI Voice Assistant (Vaani)"
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-md shadow-pink-600/20 transition-all hover:scale-105"
+              title="Open Dhristi AI Voice Assistant (Vaani - Female Voice)"
             >
               <Mic className="w-3.5 h-3.5 animate-pulse" />
               <span className="hidden sm:inline">{language === 'hi' ? 'वाणी AI' : 'Vaani AI'}</span>
-            </button>
-
-            {/* Police PCR SOS Quick Shortcut */}
-            <button
-              onClick={() => openSosModal('police')}
-              className="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 transition-all hover:scale-105"
-              title="Dispatch SOS to Nearest Police Station & PCR 112"
-            >
-              <Siren className="w-3.5 h-3.5 animate-bounce" />
-              <span>{language === 'hi' ? 'पुलिस 112' : 'Police 112'}</span>
             </button>
 
             {/* Auth / Role Indicator */}
@@ -238,16 +227,18 @@ export default function Navbar() {
               {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
             </button>
 
-            {/* Unified Emergency SOS Main Button */}
+            {/* ONE Combined Universal Emergency SOS Button (Citizen, Police 112, Helplines) */}
             <button
               onClick={() => openSosModal('citizen')}
-              className="relative group flex items-center space-x-2 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-700 text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black shadow-lg shadow-red-600/30 transition-all hover:scale-105 active:scale-95"
+              className="relative group flex items-center space-x-2 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-700 text-white px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black shadow-lg shadow-red-600/40 border border-red-400/30 transition-all hover:scale-105 active:scale-95"
+              title="Universal Emergency SOS (Police 112, Citizen Beacon & NDRF Rescue)"
             >
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
               </span>
-              <span className="tracking-wide">{language === 'hi' ? 'एसओएस' : 'SOS'}</span>
+              <Siren className="w-4 h-4 animate-bounce" />
+              <span className="tracking-wide">{language === 'hi' ? 'आपातकालीन SOS' : 'EMERGENCY SOS'}</span>
               {activeAlertCount > 0 && (
                 <span className="bg-red-950 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                   {activeAlertCount}
@@ -269,7 +260,7 @@ export default function Navbar() {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 pt-3 pb-6 space-y-2">
-          {/* Mobile Auth Role, Voice Assistant & Police Action */}
+          {/* Mobile Auth Role, Voice Assistant & Secure Chat */}
           <div className="grid grid-cols-3 gap-2 pb-2">
             <button
               onClick={() => {
@@ -286,22 +277,21 @@ export default function Navbar() {
                 setMobileMenuOpen(false);
                 openVoiceAssistant();
               }}
-              className="py-2 px-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center space-x-1"
+              className="py-2 px-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs flex items-center justify-center space-x-1"
             >
               <Mic className="w-3.5 h-3.5" />
               <span>{language === 'hi' ? 'वाणी AI' : 'Vaani AI'}</span>
             </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                openSosModal('police');
-              }}
-              className="py-2 px-2 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center space-x-1"
+            <Link
+              href="/chat"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-2 rounded-xl bg-emerald-600 text-white font-bold text-xs flex items-center justify-center space-x-1"
             >
-              <Siren className="w-3.5 h-3.5" />
-              <span>{language === 'hi' ? 'पुलिस 112' : 'Police 112'}</span>
-            </button>
+              <Lock className="w-3.5 h-3.5" />
+              <span>{language === 'hi' ? 'सुरक्षित चैट' : 'Chat'}</span>
+            </Link>
           </div>
+
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -321,24 +311,18 @@ export default function Navbar() {
               </Link>
             );
           })}
+
+          {/* Unified SOS Trigger inside Mobile Drawer */}
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex gap-2">
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
                 openSosModal('citizen');
               }}
-              className="flex-1 py-2.5 text-center bg-red-600 text-white rounded-xl text-sm font-bold shadow"
+              className="flex-1 py-2.5 text-center bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl text-sm font-bold shadow flex items-center justify-center space-x-1.5"
             >
-              {language === 'hi' ? '🚨 नागरिक आपातकालीन SOS' : '🚨 Citizen Emergency SOS'}
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                openSosModal('responder');
-              }}
-              className="flex-1 py-2.5 text-center bg-slate-800 text-white rounded-xl text-sm font-semibold border border-slate-700"
-            >
-              {language === 'hi' ? '🛡️ राहत दल प्रसारण' : '🛡️ Incident Dispatch'}
+              <Siren className="w-4 h-4" />
+              <span>{language === 'hi' ? '🚨 एकीकृत आपातकालीन SOS (पुलिस व आपदा)' : '🚨 Universal Emergency SOS (Police & Citizen)'}</span>
             </button>
           </div>
         </div>
@@ -352,4 +336,3 @@ export default function Navbar() {
     </header>
   );
 }
-

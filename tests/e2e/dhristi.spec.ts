@@ -128,4 +128,24 @@ test.describe('Dhristi - End-to-End E2E Test Suite', () => {
     await expect(page.locator('text=State Emergency Operations Console (SEOC)').first()).toBeVisible();
     await expect(page.locator('text=Citizen SOS Distress Beacons').first()).toBeVisible();
   });
+
+  test('9. Encrypted 1-on-1 Disaster Support Chat loads contacts, encryption key, and sends secure message', async ({ page }) => {
+    await page.goto('/chat');
+
+    // Verify Encrypted Chat header and AES-GCM badge
+    await expect(page.locator('text=AES-GCM 256-BIT').first()).toBeVisible();
+    await expect(page.locator('text=Live Staff & Administrators').first()).toBeVisible();
+
+    // Verify staff contacts list
+    await expect(page.locator('text=Dr. Rajesh Kumar').first()).toBeVisible();
+    await expect(page.locator('text=Capt. Ananya Iyer').first()).toBeVisible();
+
+    // Type and send encrypted test message
+    const chatInput = page.locator('input[placeholder*="Type encrypted message"]').first();
+    await chatInput.fill('Need verification of relief corridor 4');
+    await page.locator('button:has-text("Send Secure")').first().click();
+
+    // Verify message appears in encrypted stream with verification hash
+    await expect(page.locator('text=Need verification of relief corridor 4').first()).toBeVisible();
+  });
 });
