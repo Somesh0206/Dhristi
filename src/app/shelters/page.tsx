@@ -69,18 +69,24 @@ export default function SheltersPage() {
 
         {/* Shelter Type Filter */}
         <div className="flex items-center space-x-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 text-xs">
-          <span className="font-bold text-slate-400 shrink-0">Type:</span>
-          {['ALL', 'CYCLONE_SHELTER', 'COMMUNITY_HALL', 'STADIUM', 'HOSPITAL'].map((t) => (
+          <span className="font-bold text-slate-400 shrink-0">Category:</span>
+          {[
+            { id: 'ALL', label: 'All Shelters' },
+            { id: 'SCHOOL', label: '🏫 Schools' },
+            { id: 'HOSPITAL', label: '🏥 Hospitals' },
+            { id: 'STADIUM', label: '🏟️ Stadiums' },
+            { id: 'GOVERNMENT_OFFICE', label: '🏛️ Govt Offices' },
+          ].map((cat) => (
             <button
-              key={t}
-              onClick={() => setFilterType(t)}
-              className={`px-3 py-1.5 rounded-lg font-bold shrink-0 transition-all ${
-                filterType === t
-                  ? 'bg-emerald-600 text-white shadow'
+              key={cat.id}
+              onClick={() => setFilterType(cat.id)}
+              className={`px-3 py-1.5 rounded-xl font-bold shrink-0 transition-all ${
+                filterType === cat.id
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
-              {t.replace('_', ' ')}
+              {cat.label}
             </button>
           ))}
         </div>
@@ -270,8 +276,18 @@ export default function SheltersPage() {
               }`}
             >
               <div className="flex items-start justify-between mb-2">
-                <span className="text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded">
-                  {shelter.type.replace('_', ' ')}
+                <span className="text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded flex items-center space-x-1">
+                  <span>
+                    {shelter.type === 'SCHOOL'
+                      ? '🏫 School'
+                      : shelter.type === 'HOSPITAL'
+                      ? '🏥 Hospital'
+                      : shelter.type === 'STADIUM'
+                      ? '🏟️ Stadium'
+                      : shelter.type === 'GOVERNMENT_OFFICE'
+                      ? '🏛️ Govt Office'
+                      : '🏢 Safe Haven'}
+                  </span>
                 </span>
                 <span className="text-xs font-mono font-black text-emerald-500">
                   Resilience: {shelter.resilienceScore}/100

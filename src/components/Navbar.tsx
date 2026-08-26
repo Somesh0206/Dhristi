@@ -70,7 +70,7 @@ export default function Navbar() {
     { href: '/red-zones', label: 'Red-Zones GIS', icon: MapPin },
     { href: '/relocation', label: 'Relocation Hub', icon: Compass },
     { href: '/shelters', label: 'Safe Shelters', icon: Building2 },
-    { href: '/predictions', label: 'AI Analytics', icon: TrendingUp },
+    { href: '/predictions', label: 'AI Predictions', icon: TrendingUp },
     { href: '/admin', label: 'Command Center', icon: SlidersHorizontal },
     { href: '/resources', label: 'Awareness & SOPs', icon: BookOpen },
   ];

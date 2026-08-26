@@ -2,7 +2,7 @@
 
 import React from 'react';
 import dynamic from 'next/dynamic';
-import { Habitation, HazardZone, Shelter } from '@/types';
+import { Habitation, HazardZone, Shelter, SosAlert } from '@/types';
 import { MapPin, Loader2 } from 'lucide-react';
 
 interface MapWrapperProps {
@@ -14,6 +14,8 @@ interface MapWrapperProps {
   userLocation?: [number, number];
   routeDestination?: [number, number];
   routeCoordinates?: [number, number][];
+  sosBeacons?: SosAlert[];
+  activeRescueSos?: SosAlert | null;
   selectedHabitationId?: string | null;
   onSelectHabitation?: (hab: Habitation) => void;
   onSelectShelter?: (shelter: Shelter) => void;

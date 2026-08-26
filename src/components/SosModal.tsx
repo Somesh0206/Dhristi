@@ -67,7 +67,10 @@ export default function SosModal() {
       hazardContext: hazardType,
       peopleCount,
       medicalAssistanceRequired: medicalNeeded,
-      notes,
+      notes: notes || 'Immediate rescue requested via Mobile Citizen Beacon',
+      urgency: medicalNeeded ? 'EXTREME' : 'CRITICAL',
+      nearestDepotName: 'SDRF Mountain Rescue Base (Meppadi Hub)',
+      nearestDepotCoords: [11.5510, 76.1240],
     });
     playSosBeep();
     setSubmitted(true);

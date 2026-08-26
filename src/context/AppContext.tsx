@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { SosAlert, IncidentReport, HazardType, RiskLevel, SensorTelemetry } from '@/types';
 import confetti from 'canvas-confetti';
 
+import { initialCitizenSosBeacons } from '@/data/sosData';
+
 export type UserRole = 'ADMIN' | 'STAFF' | 'CITIZEN';
 
 export interface UserSession {
@@ -49,10 +51,13 @@ interface AppContextType {
   openSosModal: (tab?: 'citizen' | 'responder') => void;
   closeSosModal: () => void;
 
-  // SOS Alerts (Synced with Backend /api/sos)
+  // SOS Alerts & Rescue Response
   sosAlerts: SosAlert[];
   addSosAlert: (alert: Omit<SosAlert, 'id' | 'timestamp' | 'status'>) => Promise<void>;
   updateSosStatus: (id: string, status: 'PENDING' | 'DISPATCHED' | 'RESCUED') => Promise<void>;
+  dispatchRescueTeam: (sosId: string, unitName: string, responderNotes?: string) => Promise<void>;
+  selectedSosForRoute: SosAlert | null;
+  setSelectedSosForRoute: (sos: SosAlert | null) => void;
 
   // Incident Reports (Synced with Backend /api/incidents)
   incidentReports: IncidentReport[];
@@ -106,7 +111,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [isSosModalOpen, setIsSosModalOpen] = useState<boolean>(false);
   const [sosModalTab, setSosModalTab] = useState<'citizen' | 'responder'>('citizen');
-  const [sosAlerts, setSosAlerts] = useState<SosAlert[]>([]);
+  const [sosAlerts, setSosAlerts] = useState<SosAlert[]>(initialCitizenSosBeacons);
+  const [selectedSosForRoute, setSelectedSosForRoute] = useState<SosAlert | null>(initialCitizenSosBeacons[0]);
   const [incidentReports, setIncidentReports] = useState<IncidentReport[]>([]);
   const [userCoordinates, setUserCoordinates] = useState<[number, number]>([11.551, 76.1305]);
   const [isLocating, setIsLocating] = useState<boolean>(false);
@@ -263,6 +269,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSosAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
   };
 
+  const dispatchRescueTeam = async (sosId: string, unitName: string, responderNotes?: string) => {
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const arrivalMins = Math.floor(6 + Math.random() * 8);
+
+    setSosAlerts((prev) =>
+      prev.map((alert) => {
+        if (alert.id === sosId) {
+          const updated: SosAlert = {
+            ...alert,
+            status: 'DISPATCHED',
+            assignedUnit: unitName,
+            assignedResponder: currentUser?.name || 'SEOC Rescue Officer',
+            dispatchedAt: `Just now (${now})`,
+            estimatedArrivalMins: arrivalMins,
+            responderNotes: responderNotes || `${unitName} activated under rapid deployment protocol. ETA ${arrivalMins} minutes.`,
+          };
+          // Also set as active route
+          setSelectedSosForRoute(updated);
+          return updated;
+        }
+        return alert;
+      })
+    );
+
+    try {
+      await fetch('/api/sos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          alertId: sosId,
+          status: 'DISPATCHED',
+          assignedUnit: unitName,
+          responderNotes,
+        }),
+      });
+    } catch {
+      // offline fallback
+    }
+  };
+
   const addIncidentReport = async (report: Omit<IncidentReport, 'id' | 'timestamp' | 'status' | 'upvotes'>) => {
     try {
       const res = await fetch('/api/incidents', {
@@ -391,6 +437,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         sosAlerts,
         addSosAlert,
         updateSosStatus,
+        dispatchRescueTeam,
+        selectedSosForRoute,
+        setSelectedSosForRoute,
         incidentReports,
         addIncidentReport,
         upvoteIncident,

@@ -4,6 +4,9 @@ import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { mockHabitations, mockHazardZones } from '@/data/zonesData';
 import { mockShelters } from '@/data/sheltersData';
+import { mockRescueDepots } from '@/data/sosData';
+import { SosAlert } from '@/types';
+import MapWrapper from '@/components/MapWrapper';
 import PostgisQueryTester from '@/components/PostgisQueryTester';
 import {
   SlidersHorizontal,
@@ -20,18 +23,38 @@ import {
   Flame,
   Truck,
   Plus,
+  Navigation,
+  Siren,
+  Ambulance,
+  Compass,
+  Check,
+  Eye,
 } from 'lucide-react';
 
 export default function AdminPage() {
-  const { sosAlerts, updateSosStatus, openSosModal, playSosBeep } = useApp();
+  const {
+    sosAlerts,
+    updateSosStatus,
+    dispatchRescueTeam,
+    selectedSosForRoute,
+    setSelectedSosForRoute,
+    openSosModal,
+    playSosBeep,
+    triggerEvacuationCelebration,
+  } = useApp();
 
   const [habitations, setHabitations] = useState(mockHabitations);
   const [selectedZoneId, setSelectedZoneId] = useState(mockHazardZones[0].id);
 
+  // Dispatch Dialog State
+  const [activeDispatchSos, setActiveDispatchSos] = useState<SosAlert | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState('NDRF 04 Bn Rapid Deployment Squad');
+  const [responderNotes, setResponderNotes] = useState('Dispatching 4x4 off-road rescue vehicle with flood rescue kit and medical oxygen.');
+
   // Broadcast Alert Form State
   const [broadcastTarget, setBroadcastTarget] = useState('ALL_RED_ZONES');
   const [broadcastMessage, setBroadcastMessage] = useState(
-    'MANDATORY EVACUATION NOTICE: Extreme debris flow trigger reached in Wayanad sector. Proceed immediately to Shelter SH-001.'
+    'MANDATORY EVACUATION NOTICE: Extreme debris flow trigger reached in Wayanad sector. Proceed immediately to Safe Shelter.'
   );
   const [broadcastSuccess, setBroadcastSuccess] = useState(false);
 
@@ -49,6 +72,20 @@ export default function AdminPage() {
     setTimeout(() => setBroadcastSuccess(false), 3000);
   };
 
+  const handleConfirmDispatch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeDispatchSos) return;
+    await dispatchRescueTeam(activeDispatchSos.id, selectedUnit, responderNotes);
+    setActiveDispatchSos(null);
+  };
+
+  const handleMarkRescued = async (sosId: string) => {
+    await updateSosStatus(sosId, 'RESCUED');
+    triggerEvacuationCelebration();
+  };
+
+  const activeSos = selectedSosForRoute || sosAlerts[0];
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Header */}
@@ -62,7 +99,7 @@ export default function AdminPage() {
             State Emergency Operations Console (SEOC)
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Real-time citizen SOS triage, capacity threshold overrides, and multi-channel warning dispatch.
+            Real-time citizen SOS triage, rapid rescue team dispatch, and turn-by-turn road route guidance.
           </p>
         </div>
 
@@ -75,51 +112,51 @@ export default function AdminPage() {
         </button>
       </div>
 
-      {/* Real-time Incident Triage Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left 8 Cols: Live Citizen SOS Feed */}
-        <div className="lg:col-span-8 space-y-4">
-          <div className="glass-panel p-6 rounded-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <div className="flex items-center space-x-2">
-                <span className="flex h-2.5 w-2.5 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                </span>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Live Citizen SOS Stream ({sosAlerts.length})
-                </h3>
-              </div>
-              <span className="text-xs text-slate-400 font-mono">Auto-Refreshing Stream</span>
-            </div>
+      {/* Real-time Citizen SOS Triage & Rescue Road Routing */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <span className="flex h-3 w-3 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+            </span>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              Citizen SOS Distress Beacons & Live Rescue Dispatch ({sosAlerts.length})
+            </h2>
+          </div>
+          <span className="text-xs text-slate-400 font-mono">Real-Time Operational GPS Stream</span>
+        </div>
 
-            <div className="space-y-3">
-              {sosAlerts.map((alert) => (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left 7 Cols: Citizen SOS Distress Queue */}
+          <div className="lg:col-span-7 space-y-3">
+            {sosAlerts.map((alert) => {
+              const isSelected = activeSos?.id === alert.id;
+              return (
                 <div
                   key={alert.id}
-                  className={`p-4 rounded-xl border transition-all ${
-                    alert.status === 'PENDING'
-                      ? 'bg-red-500/10 border-red-500/40 text-red-900 dark:text-red-100'
+                  className={`p-4 rounded-2xl border transition-all ${
+                    isSelected
+                      ? 'border-2 border-red-500 bg-red-500/10 shadow-lg'
+                      : alert.status === 'PENDING'
+                      ? 'bg-white dark:bg-slate-900/90 border-red-500/30'
                       : alert.status === 'DISPATCHED'
-                      ? 'bg-amber-500/10 border-amber-500/40 text-amber-900 dark:text-amber-100'
-                      : 'bg-emerald-500/10 border-emerald-500/40 text-emerald-900 dark:text-emerald-100'
+                      ? 'bg-white dark:bg-slate-900/90 border-amber-500/30'
+                      : 'bg-white dark:bg-slate-900/90 border-emerald-500/30'
                   }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center space-x-2">
-                      <span className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-black/20">
+                      <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                         {alert.id}
                       </span>
                       <span className="font-bold text-sm text-slate-900 dark:text-white">{alert.senderName}</span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                        ({alert.senderPhone})
-                      </span>
+                      <span className="text-xs text-slate-400 font-mono">({alert.senderPhone})</span>
                     </div>
 
-                    {/* Status Pill */}
                     <div className="flex items-center space-x-2">
                       <span
-                        className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
+                        className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase ${
                           alert.status === 'PENDING'
                             ? 'bg-red-600 text-white animate-pulse'
                             : alert.status === 'DISPATCHED'
@@ -127,55 +164,224 @@ export default function AdminPage() {
                             : 'bg-emerald-600 text-white'
                         }`}
                       >
-                        {alert.status}
+                        {alert.status === 'PENDING'
+                          ? '🚨 Distress Pending'
+                          : alert.status === 'DISPATCHED'
+                          ? '⚡ Unit En Route'
+                          : '✓ Rescued'}
                       </span>
                       <span className="text-[11px] text-slate-400 font-mono">{alert.timestamp}</span>
                     </div>
                   </div>
 
-                  <div className="mt-2 text-xs text-slate-700 dark:text-slate-300">
+                  <div className="mt-2 text-xs text-slate-700 dark:text-slate-300 space-y-1">
                     <div className="flex items-center space-x-1.5 font-medium">
                       <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
                       <span>{alert.addressDescription}</span>
                     </div>
-                    {alert.notes && <div className="mt-1 text-slate-500 dark:text-slate-400 italic">“{alert.notes}”</div>}
+                    {alert.notes && (
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-800/60 p-2 rounded-lg">
+                        “{alert.notes}”
+                      </div>
+                    )}
                   </div>
 
-                  <div className="mt-3 pt-2 border-t border-black/10 dark:border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  {/* Dispatch Unit Info if assigned */}
+                  {alert.assignedUnit && (
+                    <div className="mt-2 text-xs bg-blue-500/10 border border-blue-500/30 text-blue-800 dark:text-blue-200 p-2 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Truck className="w-4 h-4 text-blue-500 shrink-0" />
+                        <div>
+                          <strong>{alert.assignedUnit}</strong>
+                          <span className="text-[10px] text-slate-400 block">{alert.responderNotes}</span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded">
+                        ETA: ~{alert.estimatedArrivalMins || 8} mins
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Operational Metrics & Action Bar */}
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
                     <div className="flex items-center space-x-3 text-[11px] font-mono">
-                      <span>Trapped: <strong>{alert.peopleCount}</strong></span>
+                      <span>People: <strong className="text-slate-900 dark:text-white">{alert.peopleCount}</strong></span>
                       {alert.medicalAssistanceRequired && (
-                        <span className="text-red-500 font-bold">🚑 Medical Triage Req.</span>
+                        <span className="text-red-500 font-bold flex items-center space-x-1">
+                          <Ambulance className="w-3 h-3" />
+                          <span>Medical Triage Req.</span>
+                        </span>
                       )}
-                      <span>GPS: {alert.coordinates[0].toFixed(4)}, {alert.coordinates[1].toFixed(4)}</span>
                     </div>
 
-                    {/* Triage Actions */}
                     <div className="flex items-center space-x-1.5">
-                      {alert.status !== 'DISPATCHED' && (
-                        <button
-                          onClick={() => updateSosStatus(alert.id, 'DISPATCHED')}
-                          className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded text-[11px] shadow transition-colors"
-                        >
-                          Dispatch SDRF Team
-                        </button>
-                      )}
+                      {/* View Road Route Button */}
+                      <button
+                        onClick={() => setSelectedSosForRoute(alert)}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1 transition-all ${
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
+                        <span>View Rescue Route</span>
+                      </button>
+
+                      {/* Dispatch Rescue Team Button */}
                       {alert.status !== 'RESCUED' && (
                         <button
-                          onClick={() => updateSosStatus(alert.id, 'RESCUED')}
-                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-[11px] shadow transition-colors"
+                          onClick={() => {
+                            setActiveDispatchSos(alert);
+                            setSelectedSosForRoute(alert);
+                          }}
+                          className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs shadow flex items-center space-x-1 transition-all hover:scale-105"
                         >
-                          Mark Rescued
+                          <Siren className="w-3.5 h-3.5" />
+                          <span>{alert.status === 'DISPATCHED' ? 'Re-assign Unit' : 'Respond & Dispatch'}</span>
+                        </button>
+                      )}
+
+                      {/* Mark Rescued Button */}
+                      {alert.status !== 'RESCUED' && (
+                        <button
+                          onClick={() => handleMarkRescued(alert.id)}
+                          className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs shadow flex items-center space-x-1"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Rescued</span>
                         </button>
                       )}
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          {/* Habitation Capacity Threshold Override Console */}
+          {/* Right 5 Cols: Interactive Rescue Road Routing Map */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="glass-panel p-4 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
+                  <Navigation className="w-4 h-4 text-blue-500" />
+                  <span>Rescue Road Vector: {activeSos?.nearestDepotName?.split(',')[0] || 'NDRF Base'} ➔ {activeSos?.senderName}</span>
+                </span>
+              </div>
+
+              {/* GIS Map with Road Route from Depot to Citizen */}
+              {activeSos && (
+                <MapWrapper
+                  center={activeSos.coordinates}
+                  zoom={12}
+                  activeRescueSos={activeSos}
+                  sosBeacons={sosAlerts}
+                  height="420px"
+                />
+              )}
+
+              {/* Route Summary Card */}
+              {activeSos && (
+                <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-xl space-y-2 text-xs">
+                  <div className="flex items-center justify-between font-bold">
+                    <span className="text-slate-700 dark:text-slate-300">Origin Depot:</span>
+                    <span className="text-blue-500">{activeSos.nearestDepotName || 'NDRF 04 Bn Deployment Hub'}</span>
+                  </div>
+                  <div className="flex items-center justify-between font-bold">
+                    <span className="text-slate-700 dark:text-slate-300">Destination:</span>
+                    <span className="text-red-500 truncate max-w-[200px]">{activeSos.addressDescription}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 pt-2 text-[11px] font-mono">
+                    <span>Est. Distance: <strong>7.4 km (Highway & Ridge Road)</strong></span>
+                    <span className="text-emerald-500 font-bold">Clear of Blockages</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Dispatch Modal Dialog */}
+      {activeDispatchSos && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-panel max-w-lg w-full p-6 rounded-2xl shadow-2xl space-y-4 border-2 border-amber-500">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <div className="flex items-center space-x-2">
+                <Siren className="w-5 h-5 text-amber-500 animate-bounce" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Dispatch Rescue Squad to {activeDispatchSos.senderName}
+                </h3>
+              </div>
+              <button
+                onClick={() => setActiveDispatchSos(null)}
+                className="text-slate-400 hover:text-white font-bold text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="text-xs bg-red-500/10 border border-red-500/30 p-2.5 rounded-xl space-y-1">
+              <div><strong>Distress Location:</strong> {activeDispatchSos.addressDescription}</div>
+              <div><strong>Trapped Persons:</strong> {activeDispatchSos.peopleCount} individuals</div>
+              {activeDispatchSos.notes && <div><strong>Citizen Note:</strong> “{activeDispatchSos.notes}”</div>}
+            </div>
+
+            <form onSubmit={handleConfirmDispatch} className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Select Rescue Squad / Unit:
+                </label>
+                <select
+                  value={selectedUnit}
+                  onChange={(e) => setSelectedUnit(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold text-slate-900 dark:text-white"
+                >
+                  <option value="NDRF 04 Bn Rapid Deployment Squad">🛡️ NDRF 04 Bn Rapid Deployment Squad (Kalpetta)</option>
+                  <option value="SDRF Mountain Search & Rescue Base">⛰️ SDRF Mountain Search & Rescue Base (Meppadi)</option>
+                  <option value="Kerala Fire & Rescue Specialized Ops">🚒 Kerala Fire & Rescue Specialized Ops (Vythiri)</option>
+                  <option value="District Trauma Ambulance Corps">🚑 District Trauma Ambulance & Paramedic Corps</option>
+                  <option value="Police Quick Reaction Team (PCR 112)">🚓 Police Quick Reaction Team (PCR Patrol)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Responder Instructions & Route Protocol:
+                </label>
+                <textarea
+                  rows={3}
+                  value={responderNotes}
+                  onChange={(e) => setResponderNotes(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveDispatchSos(null)}
+                  className="flex-1 py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-bold shadow flex items-center justify-center space-x-1.5"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Authorize & Dispatch Team</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Grid: Habitation Capacity Overrides + PostGIS Console + Broadcast Dispatch */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left 7 Cols: Capacity Stress Overrides */}
+        <div className="lg:col-span-7 space-y-4">
           <div className="glass-panel p-6 rounded-2xl space-y-4">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Habitation Population & Capacity Stress Override
@@ -199,33 +405,33 @@ export default function AdminPage() {
                         <span className="block text-[10px] text-slate-400 font-mono">{hab.id}</span>
                       </td>
                       <td className="py-2.5">
-                        <span className="font-mono font-bold text-red-500">{hab.vulnerabilityScore}%</span>
+                        <span className="font-bold text-red-500">{hab.vulnerabilityScore}%</span>
                       </td>
-                      <td className="py-2.5 font-mono font-bold">{hab.population.toLocaleString()}</td>
+                      <td className="py-2.5 font-mono">{hab.population}</td>
                       <td className="py-2.5">
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                          className={`text-[10px] px-2 py-0.5 rounded font-bold ${
                             hab.immediateRelocationNeeded
                               ? 'bg-red-500/20 text-red-500'
-                              : 'bg-emerald-500/20 text-emerald-500'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
                           }`}
                         >
-                          {hab.immediateRelocationNeeded ? 'Mandatory' : 'Advisory'}
+                          {hab.immediateRelocationNeeded ? 'CRITICAL MANDATE' : 'MONITORING'}
                         </span>
                       </td>
                       <td className="py-2.5 text-right">
-                        <div className="inline-flex items-center space-x-1">
+                        <div className="inline-flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
                           <button
                             onClick={() => handleCapacityChange(hab.id, -50)}
-                            className="w-6 h-6 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 font-bold"
+                            className="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white font-bold"
                           >
-                            -
+                            -50
                           </button>
                           <button
                             onClick={() => handleCapacityChange(hab.id, 50)}
-                            className="w-6 h-6 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 font-bold"
+                            className="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-emerald-500 hover:text-white font-bold"
                           >
-                            +
+                            +50
                           </button>
                         </div>
                       </td>
@@ -235,101 +441,74 @@ export default function AdminPage() {
               </table>
             </div>
           </div>
+
+          {/* PostGIS Spatial SQL Query Console */}
+          <PostgisQueryTester />
         </div>
 
-        {/* Right 4 Cols: Emergency Alert Broadcast Station */}
-        <div className="lg:col-span-4 space-y-4">
-          <div className="glass-panel p-6 rounded-2xl border-purple-500/40 space-y-4">
+        {/* Right 5 Cols: Regional Broadcast Console */}
+        <div className="lg:col-span-5 space-y-4">
+          <div className="glass-panel p-6 rounded-2xl space-y-4 border-red-500/40">
             <div className="flex items-center space-x-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-              <Radio className="w-5 h-5 text-purple-500 animate-pulse" />
+              <AlertOctagon className="w-5 h-5 text-red-500" />
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Emergency Alert Broadcast Station
+                Multi-Channel Emergency Warning Broadcast
               </h3>
             </div>
 
-            {broadcastSuccess ? (
-              <div className="p-4 bg-emerald-500/20 border border-emerald-500 text-emerald-300 rounded-xl text-center text-xs space-y-2">
-                <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
-                <div className="font-bold text-sm">Emergency Alert Broadcasted!</div>
-                <p>Cellular SMS, siren relays, and HAM frequency channels activated for selected sector.</p>
+            {broadcastSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-bold flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Broadcast Queued across SMS, Voice Gateways, & Siren Networks!</span>
               </div>
-            ) : (
-              <form onSubmit={handleSendBroadcast} className="space-y-4 text-xs">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Target Geofenced Zone
-                  </label>
-                  <select
-                    value={broadcastTarget}
-                    onChange={(e) => setBroadcastTarget(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
-                  >
-                    <option value="ALL_RED_ZONES">All Active Red Zones (Wayanad & Chamoli)</option>
-                    <option value="ZONE-RED-01">ZONE-RED-01: Wayanad Western Escarpment</option>
-                    <option value="ZONE-RED-02">ZONE-RED-02: Joshimath Main Fault Belt</option>
-                    <option value="ZONE-ORG-02">ZONE-ORG-02: Kosi Embankment Spill Channel</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Broadcast Advisory Message
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={broadcastMessage}
-                    onChange={(e) => setBroadcastMessage(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
-                  ></textarea>
-                </div>
-
-                <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-                  <div className="font-bold text-slate-900 dark:text-white">Active Channels:</div>
-                  <div>• Cell Broadcast Service (CBS Channel 4370)</div>
-                  <div>• 145.500 MHz HAM Emergency Net</div>
-                  <div>• Electronic Warning Sirens (3km Acoustic Radius)</div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold uppercase tracking-wider shadow-lg flex items-center justify-center space-x-2 transition-all"
-                >
-                  <Send className="w-4 h-4" />
-                  <span>TRANSMIT MASS ALERT</span>
-                </button>
-              </form>
             )}
-          </div>
 
-          {/* Quick Rescue Logistics Status */}
-          <div className="glass-panel p-5 rounded-2xl space-y-3 text-xs">
-            <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-              Deployed Relief Assets
-            </h4>
-            <div className="grid grid-cols-2 gap-2 font-mono">
-              <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800">
-                <div className="text-[10px] text-slate-400 font-sans">NDRF Teams Active</div>
-                <div className="text-base font-bold text-slate-900 dark:text-white">12 Platoons</div>
+            <form onSubmit={handleSendBroadcast} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Target Geofenced Zone:</label>
+                <select
+                  value={broadcastTarget}
+                  onChange={(e) => setBroadcastTarget(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+                >
+                  <option value="ALL_RED_ZONES">All Critical Hazard Red-Zones (Wayanad Sector)</option>
+                  <option value="ZONE-01">Zone 1: Meppadi Escarpment</option>
+                  <option value="ZONE-02">Zone 2: Chooralmala Floodplain</option>
+                  <option value="ALL_CITIZENS">Regional Broadcast (All Registered Habitations)</option>
+                </select>
               </div>
-              <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800">
-                <div className="text-[10px] text-slate-400 font-sans">Motorized Boats</div>
-                <div className="text-base font-bold text-blue-500">28 Inflatable</div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Broadcast Message Body:</label>
+                <textarea
+                  rows={4}
+                  value={broadcastMessage}
+                  onChange={(e) => setBroadcastMessage(e.target.value)}
+                  className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-sans focus:ring-2 focus:ring-red-500"
+                />
               </div>
-              <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800">
-                <div className="text-[10px] text-slate-400 font-sans">Helicopters (Mi-17)</div>
-                <div className="text-base font-bold text-amber-500">4 Air-Ready</div>
+
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 space-y-2">
+                <span className="text-[10px] text-slate-400 font-bold block uppercase">Active Broadcast Channels:</span>
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <span className="text-emerald-500">✓ Twilio SMS Gateway</span>
+                  <span className="text-emerald-500">✓ Automated Voice IVR</span>
+                  <span className="text-emerald-500">✓ Radio Frequency (HAM)</span>
+                  <span className="text-emerald-500">✓ Public Alert Sirens</span>
+                </div>
               </div>
-              <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800">
-                <div className="text-[10px] text-slate-400 font-sans">Field Ambulances</div>
-                <div className="text-base font-bold text-emerald-500">34 Units</div>
-              </div>
-            </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold flex items-center justify-center space-x-2 shadow-lg shadow-red-600/30 transition-all hover:scale-105"
+              >
+                <Send className="w-4 h-4" />
+                <span>Transmit Geofenced Emergency Warning</span>
+              </button>
+            </form>
           </div>
         </div>
       </div>
-
-      {/* Supabase / PostGIS Spatial SQL Query Console */}
-      <PostgisQueryTester />
     </div>
   );
 }

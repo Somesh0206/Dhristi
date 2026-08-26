@@ -66,7 +66,7 @@ export interface Shelter {
   coordinates: [number, number];
   contactPerson: string;
   phone: string;
-  type: 'SCHOOL' | 'COMMUNITY_HALL' | 'STADIUM' | 'CYCLONE_SHELTER' | 'HOSPITAL';
+  type: 'SCHOOL' | 'HOSPITAL' | 'STADIUM' | 'GOVERNMENT_OFFICE' | 'COMMUNITY_HALL' | 'CYCLONE_SHELTER';
   supplies: ShelterSupplies;
   resilienceScore: number; // 0 - 100 (50-year disaster withstand)
   historicalWithstand: {
@@ -117,6 +117,15 @@ export interface SosAlert {
   peopleCount: number;
   medicalAssistanceRequired: boolean;
   notes?: string;
+  urgency?: 'EXTREME' | 'CRITICAL' | 'HIGH' | 'MODERATE';
+  assignedUnit?: string;
+  assignedResponder?: string;
+  estimatedArrivalMins?: number;
+  responderNotes?: string;
+  dispatchedAt?: string;
+  nearestDepotName?: string;
+  nearestDepotCoords?: [number, number];
+  routeGeometry?: [number, number][];
 }
 
 export interface IncidentReport {

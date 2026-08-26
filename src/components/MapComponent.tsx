@@ -4,23 +4,22 @@ import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polygon, Polyline, Circle, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { Habitation, HazardZone, Shelter } from '@/types';
+import { Habitation, HazardZone, Shelter, SosAlert } from '@/types';
 import { useApp, MapTileProvider } from '@/context/AppContext';
 import { Globe2, Navigation, Layers, ExternalLink } from 'lucide-react';
 
-// Custom Map Marker Icons using HTML SVGs
-function createCustomIcon(color: string, label: string, isPulsing = false) {
-  const pulseHtml = isPulsing
-    ? `<div class="absolute -inset-1 rounded-full bg-red-500 animate-ping opacity-75"></div>`
-    : '';
-
+function createCustomIcon(color: string, label: string, pulse: boolean = false) {
   return L.divIcon({
     className: 'custom-leaflet-marker',
     html: `
       <div class="relative flex items-center justify-center">
-        ${pulseHtml}
-        <div style="background-color: ${color};" class="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-white shadow-xl transform hover:scale-125 transition-transform">
-          <span style="font-size: 10px; font-weight: 800;">${label}</span>
+        ${
+          pulse
+            ? `<span class="animate-ping absolute inline-flex h-8 w-8 rounded-full opacity-75" style="background-color: ${color}"></span>`
+            : ''
+        }
+        <div class="relative w-8 h-8 rounded-full flex items-center justify-center text-white font-extrabold text-[10px] shadow-xl border-2 border-white/90" style="background-color: ${color};">
+          ${label}
         </div>
       </div>
     `,
@@ -33,8 +32,24 @@ function createCustomIcon(color: string, label: string, isPulsing = false) {
 const redZoneIcon = createCustomIcon('#EF4444', 'RED', true);
 const orangeZoneIcon = createCustomIcon('#F97316', 'ORG');
 const greenZoneIcon = createCustomIcon('#10B981', 'GRN');
-const shelterIcon = createCustomIcon('#3B82F6', 'SHL');
 const userLocationIcon = createCustomIcon('#8B5CF6', 'YOU', true);
+const sosBeaconIcon = createCustomIcon('#DC2626', 'SOS', true);
+const rescueDepotIcon = createCustomIcon('#0284C7', 'DEP', false);
+
+// Specific icons for safe shelter categories
+const schoolShelterIcon = createCustomIcon('#4F46E5', 'SCH');
+const hospitalShelterIcon = createCustomIcon('#059669', 'HSP');
+const stadiumShelterIcon = createCustomIcon('#D97706', 'STD');
+const govtShelterIcon = createCustomIcon('#2563EB', 'GOV');
+const defaultShelterIcon = createCustomIcon('#3B82F6', 'SHL');
+
+function getShelterIcon(type?: string) {
+  if (type === 'SCHOOL') return schoolShelterIcon;
+  if (type === 'HOSPITAL') return hospitalShelterIcon;
+  if (type === 'STADIUM') return stadiumShelterIcon;
+  if (type === 'GOVERNMENT_OFFICE') return govtShelterIcon;
+  return defaultShelterIcon;
+}
 
 function MapController({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
@@ -81,6 +96,8 @@ interface MapComponentProps {
   userLocation?: [number, number];
   routeDestination?: [number, number];
   routeCoordinates?: [number, number][];
+  sosBeacons?: SosAlert[];
+  activeRescueSos?: SosAlert | null;
   selectedHabitationId?: string | null;
   onSelectHabitation?: (hab: Habitation) => void;
   onSelectShelter?: (shelter: Shelter) => void;
@@ -127,6 +144,8 @@ export default function MapComponent({
   userLocation,
   routeDestination,
   routeCoordinates,
+  sosBeacons = [],
+  activeRescueSos,
   selectedHabitationId,
   onSelectHabitation,
   onSelectShelter,
@@ -135,12 +154,16 @@ export default function MapComponent({
   const { mapTileProvider, setMapTileProvider } = useApp();
   const currentTile = tileProviders[mapTileProvider] || tileProviders.google_hybrid;
 
+  // Determine active route endpoints (either rescue route or evacuation route)
+  const routeOrigin = activeRescueSos ? activeRescueSos.nearestDepotCoords || [11.6140, 76.0850] : userLocation;
+  const routeDest = activeRescueSos ? activeRescueSos.coordinates : routeDestination;
+
   // Compute active road polyline
   const activeRoadPoints =
     routeCoordinates && routeCoordinates.length >= 2
       ? routeCoordinates
-      : userLocation && routeDestination
-      ? generateRealisticRoadPoints(userLocation, routeDestination)
+      : routeOrigin && routeDest
+      ? generateRealisticRoadPoints(routeOrigin, routeDest)
       : null;
 
   // Intermediate Checkpoint Waypoints
@@ -342,14 +365,14 @@ export default function MapComponent({
           );
         })}
 
-        {/* Shelter Markers */}
+        {/* Shelter Markers with Category-Specific Icons (School, Hospital, Stadium, Govt Office) */}
         {shelters.map((shelter) => {
           const isOverflow = shelter.currentOccupancy >= shelter.totalCapacity;
           return (
             <Marker
               key={shelter.id}
               position={shelter.coordinates}
-              icon={shelterIcon}
+              icon={getShelterIcon(shelter.type)}
               eventHandlers={{
                 click: () => onSelectShelter && onSelectShelter(shelter),
               }}
@@ -358,6 +381,9 @@ export default function MapComponent({
                 <div className="p-2 space-y-1.5 text-slate-100 min-w-[240px]">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-xs text-blue-400">{shelter.name}</span>
+                    <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-blue-900/60 text-blue-200">
+                      {shelter.type.replace('_', ' ')}
+                    </span>
                   </div>
                   <div className="text-[11px] text-slate-300">{shelter.address}</div>
                   <div className="bg-slate-800 p-1.5 rounded text-[10px] space-y-1">
@@ -406,6 +432,50 @@ export default function MapComponent({
             </Marker>
           );
         })}
+
+        {/* Citizen SOS Distress Beacons */}
+        {sosBeacons.map((beacon) => (
+          <Marker key={beacon.id} position={beacon.coordinates} icon={sosBeaconIcon}>
+            <Popup>
+              <div className="p-2 space-y-1 text-slate-100 min-w-[220px]">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-red-400">🚨 Citizen SOS Beacon</span>
+                  <span className="text-[9px] bg-red-950 text-red-300 font-bold px-1 rounded">
+                    {beacon.urgency || 'HIGH'}
+                  </span>
+                </div>
+                <div className="font-bold text-xs">{beacon.senderName}</div>
+                <div className="text-[10px] text-slate-300">{beacon.addressDescription}</div>
+                <div className="text-[10px] bg-slate-800 p-1 rounded font-mono">
+                  People: <strong className="text-amber-400">{beacon.peopleCount}</strong> | Medical:{' '}
+                  <strong className={beacon.medicalAssistanceRequired ? 'text-red-400' : 'text-slate-400'}>
+                    {beacon.medicalAssistanceRequired ? 'REQUIRED' : 'NO'}
+                  </strong>
+                </div>
+                {beacon.assignedUnit && (
+                  <div className="text-[10px] text-blue-300 bg-blue-950/60 p-1 rounded">
+                    Dispatched: <strong>{beacon.assignedUnit}</strong> (ETA: {beacon.estimatedArrivalMins}m)
+                  </div>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+
+        {/* Rescue Responder Depot Marker (When active rescue route is displayed) */}
+        {activeRescueSos && activeRescueSos.nearestDepotCoords && (
+          <Marker position={activeRescueSos.nearestDepotCoords} icon={rescueDepotIcon}>
+            <Popup>
+              <div className="p-2 space-y-1 text-slate-100 min-w-[200px]">
+                <div className="font-bold text-xs text-blue-400">🛡️ Rescue Dispatch Depot</div>
+                <div className="text-xs">{activeRescueSos.nearestDepotName || 'NDRF Rapid Response Base'}</div>
+                <div className="text-[10px] text-slate-300">
+                  Active Units En Route to {activeRescueSos.senderName}
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        )}
 
         {/* User Current Location Marker */}
         {userLocation && (

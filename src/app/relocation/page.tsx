@@ -333,8 +333,16 @@ function RelocationContent() {
           <div className="glass-panel p-5 rounded-2xl border-blue-500/40 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <div>
-                <span className="text-[10px] font-mono bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-bold">
-                  ASSIGNED SAFE HAVEN
+                <span className="text-[10px] font-mono bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  {nearestShelter.type === 'SCHOOL'
+                    ? '🏫 SAFE SCHOOL SHELTER'
+                    : nearestShelter.type === 'HOSPITAL'
+                    ? '🏥 SAFE HOSPITAL HAVEN'
+                    : nearestShelter.type === 'STADIUM'
+                    ? '🏟️ SAFE STADIUM FACILITY'
+                    : nearestShelter.type === 'GOVERNMENT_OFFICE'
+                    ? '🏛️ SAFE GOVT COMPLEX'
+                    : 'SAFE DESIGNATED SHELTER'}
                 </span>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white mt-1">
                   {nearestShelter.name}
