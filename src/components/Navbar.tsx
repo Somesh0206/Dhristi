@@ -158,7 +158,7 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Actions: Police SOS, Auth Badge, USGS/NASA Feeds, Theme Toggle, Siren, SOS Trigger */}
+          {/* Actions: Police SOS, Auth Badge, Theme Toggle, Siren, SOS Trigger */}
           <div className="flex items-center space-x-2 sm:space-x-2.5">
             {/* Police SOS Button */}
             <button
@@ -184,16 +184,6 @@ export default function Navbar() {
                 <Eye className="w-3.5 h-3.5 text-emerald-500" />
               )}
               <span>{roleLabel}</span>
-            </button>
-
-            {/* USGS / NASA Live Feeds Trigger */}
-            <button
-              onClick={() => setIsDisasterModalOpen(true)}
-              className="hidden xl:flex items-center space-x-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold bg-purple-500/10 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 border border-purple-300 dark:border-purple-800/60 hover:bg-purple-500/20 transition-all"
-              title="USGS & NASA Live API Feeds"
-            >
-              <Globe2 className="w-3.5 h-3.5 text-purple-500 animate-spin-slow" />
-              <span>Live APIs</span>
             </button>
 
             {/* Siren audio simulation toggle */}
@@ -272,17 +262,6 @@ export default function Navbar() {
               <span>Police SOS</span>
             </button>
           </div>
-
-          <button
-            onClick={() => {
-              setMobileMenuOpen(false);
-              setIsDisasterModalOpen(true);
-            }}
-            className="w-full py-2 px-3 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-300 font-bold text-xs flex items-center justify-center space-x-2 border border-purple-500/20"
-          >
-            <Globe2 className="w-4 h-4" />
-            <span>Open USGS & NASA Live Feeds</span>
-          </button>
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;

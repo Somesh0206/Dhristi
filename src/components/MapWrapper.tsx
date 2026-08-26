@@ -13,6 +13,7 @@ interface MapWrapperProps {
   shelters?: Shelter[];
   userLocation?: [number, number];
   routeDestination?: [number, number];
+  routeCoordinates?: [number, number][];
   selectedHabitationId?: string | null;
   onSelectHabitation?: (hab: Habitation) => void;
   onSelectShelter?: (shelter: Shelter) => void;

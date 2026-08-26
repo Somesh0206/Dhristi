@@ -64,6 +64,7 @@ function RelocationContent() {
   const [hasCompletedEvacuation, setHasCompletedEvacuation] = useState<boolean>(false);
   const [resolvedAddress, setResolvedAddress] = useState<string>('Meppadi Hazard Zone, Wayanad');
   const [routingSteps, setRoutingSteps] = useState<any[]>([]);
+  const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
 
   // Pre-load from query param if passed
   useEffect(() => {
@@ -115,6 +116,9 @@ function RelocationContent() {
       .then((data) => {
         if (data.steps && data.steps.length > 0) {
           setRoutingSteps(data.steps);
+        }
+        if (data.coordinates && data.coordinates.length > 0) {
+          setRouteCoordinates(data.coordinates);
         }
       })
       .catch(() => {});
@@ -234,6 +238,7 @@ function RelocationContent() {
               zoom={12}
               userLocation={userCoordinates}
               routeDestination={nearestShelter.coordinates}
+              routeCoordinates={routeCoordinates}
               shelters={[nearestShelter]}
               habitations={mockHabitations}
               height="520px"
