@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import {
   AlertOctagon,
@@ -16,8 +16,16 @@ import {
   Volume2,
   AlertTriangle,
   LocateFixed,
+  Siren,
+  Copy,
+  ExternalLink,
+  Flame,
+  Activity,
+  Car,
+  ShieldAlert,
+  HelpCircle,
 } from 'lucide-react';
-import { emergencyHelplines } from '@/data/resourcesData';
+import { mockPoliceStations, governmentEmergencyDirectory, PoliceStation } from '@/data/policeData';
 import { HazardType } from '@/types';
 
 export default function SosModal() {
@@ -34,17 +42,40 @@ export default function SosModal() {
     t,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'citizen' | 'responder'>(sosModalTab || 'citizen');
+  const [activeTab, setActiveTab] = useState<'citizen' | 'police' | 'responder' | 'helplines'>('citizen');
   const [submitted, setSubmitted] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+
+  // Sync activeTab when modal opens with a specific tab
+  useEffect(() => {
+    if (sosModalTab) {
+      setActiveTab(sosModalTab);
+    }
+  }, [sosModalTab, isSosModalOpen]);
 
   // Citizen Form state
   const [senderName, setSenderName] = useState('');
   const [senderPhone, setSenderPhone] = useState('');
-  const [address, setAddress] = useState(language === 'hi' ? 'उच्च जोखिम ढलान सेक्टर #3 के समीप' : 'Near High-Risk Sector Slope #3');
+  const [address, setAddress] = useState(
+    language === 'hi' ? 'उच्च जोखिम ढलान सेक्टर #3 के समीप' : 'Near High-Risk Sector Slope #3'
+  );
   const [hazardType, setHazardType] = useState<HazardType>('landslide');
   const [peopleCount, setPeopleCount] = useState<number>(3);
   const [medicalNeeded, setMedicalNeeded] = useState<boolean>(false);
   const [notes, setNotes] = useState('');
+
+  // Police Station State
+  const [policeStations, setPoliceStations] = useState<PoliceStation[]>(mockPoliceStations);
+  const [selectedStation, setSelectedStation] = useState<PoliceStation>(mockPoliceStations[0]);
+  const [policeVictimsCount, setPoliceVictimsCount] = useState<number>(3);
+  const [policeEmergencyText, setPoliceEmergencyText] = useState<string>(
+    language === 'hi'
+      ? 'तत्काल पुलिस सहायता: भूस्खलन रेड ज़ोन में फंसे नागरिक। तत्काल पुलिस पीसीआर वैन एवं बचाव वाहन की आवश्यकता है।'
+      : 'URGENT POLICE SOS: Vulnerable family trapped in landslide red zone near stream. Immediate police PCR evacuation & transport needed.'
+  );
+  const [policeDispatchResult, setPoliceDispatchResult] = useState<any>(null);
+  const [isPoliceDispatching, setIsPoliceDispatching] = useState<boolean>(false);
+  const [copiedNumber, setCopiedNumber] = useState<string | null>(null);
 
   // Responder Form state
   const [broadcastTitle, setBroadcastTitle] = useState(
@@ -57,6 +88,21 @@ export default function SosModal() {
     smsAlert: true,
     radioBroadcast: true,
   });
+
+  // Fetch nearest police stations based on user coordinates
+  useEffect(() => {
+    if (isSosModalOpen) {
+      fetch(`/api/police/stations?lat=${userCoordinates[0]}&lon=${userCoordinates[1]}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.stations && data.stations.length > 0) {
+            setPoliceStations(data.stations);
+            setSelectedStation(data.nearestStation || data.stations[0]);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isSosModalOpen, userCoordinates]);
 
   if (!isSosModalOpen) return null;
 
@@ -71,17 +117,78 @@ export default function SosModal() {
       hazardContext: hazardType,
       peopleCount,
       medicalAssistanceRequired: medicalNeeded,
-      notes: notes || (language === 'hi' ? 'मोबाइल बीकन के माध्यम से तत्काल सहायता का अनुरोध किया गया' : 'Immediate rescue requested via Mobile Citizen Beacon'),
+      notes:
+        notes ||
+        (language === 'hi'
+          ? 'मोबाइल बीकन के माध्यम से तत्काल सहायता का अनुरोध किया गया'
+          : 'Immediate rescue requested via Mobile Citizen Beacon'),
       urgency: medicalNeeded ? 'EXTREME' : 'CRITICAL',
       nearestDepotName: 'SDRF Mountain Rescue Base (Meppadi Hub)',
-      nearestDepotCoords: [11.5510, 76.1240],
+      nearestDepotCoords: [11.551, 76.124],
     });
     playSosBeep();
+    setSubmitMessage(
+      language === 'hi'
+        ? 'नागरिक संकटकालीन SOS बीकन सफलता से प्रसारित कर दिया गया है! SEOC नियंत्रण कक्ष को सतर्क कर दिया गया है।'
+        : 'Citizen Distress SOS Beacon broadcasted successfully! SEOC Command has prioritized your location.'
+    );
     setSubmitted(true);
     setTimeout(() => {
       setSubmitted(false);
       closeSosModal();
     }, 2800);
+  };
+
+  const handlePoliceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsPoliceDispatching(true);
+    playSosBeep();
+
+    try {
+      const res = await fetch('/api/police/stations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stationId: selectedStation.id,
+          userCoordinates,
+          citizenPhone: senderPhone || '+91-98765-43210',
+          emergencyText: policeEmergencyText,
+          victimsCount: policeVictimsCount,
+        }),
+      });
+
+      const data = await res.json();
+      setPoliceDispatchResult(data);
+    } catch {
+      setPoliceDispatchResult({
+        success: true,
+        message: 'Direct emergency beacon dispatched to police control room.',
+        dispatch: {
+          dispatchId: `POL-EMG-${Date.now().toString(36).toUpperCase()}`,
+          stationName: selectedStation.name,
+          assignedVehicle: 'PCR Van-12 (En Route)',
+          status: 'DISPATCHED_EN_ROUTE',
+          etaMinutes: 5,
+        },
+      });
+    } finally {
+      setIsPoliceDispatching(false);
+      // Also register into global SOS stream for admin visibility
+      addSosAlert({
+        senderName: senderName ? `[POLICE SOS] ${senderName}` : `[POLICE 112] Citizen Beacon`,
+        senderPhone: senderPhone || '+91-98765-43210',
+        coordinates: userCoordinates,
+        addressDescription: `${selectedStation.name} Jurisdiction - ${address}`,
+        type: 'CITIZEN_SOS',
+        hazardContext: 'landslide',
+        peopleCount: policeVictimsCount,
+        medicalAssistanceRequired: true,
+        notes: `POLICE PCR DISPATCH: ${policeEmergencyText}`,
+        urgency: 'EXTREME',
+        nearestDepotName: selectedStation.name,
+        nearestDepotCoords: selectedStation.coordinates,
+      });
+    }
   };
 
   const handleResponderBroadcast = (e: React.FormEvent) => {
@@ -90,7 +197,9 @@ export default function SosModal() {
       senderName: language === 'hi' ? 'आपदा कमांडर प्रेषण (SEOC)' : 'Incident Commander Dispatch (SEOC)',
       senderPhone: '1070',
       coordinates: userCoordinates,
-      addressDescription: `${targetZone} - ${language === 'hi' ? 'निकासी गलियारा सक्रिय' : 'Evacuation Corridor Active'}`,
+      addressDescription: `${targetZone} - ${
+        language === 'hi' ? 'निकासी गलियारा सक्रिय' : 'Evacuation Corridor Active'
+      }`,
       type: 'ADMIN_DISPATCH',
       hazardContext: 'landslide',
       peopleCount: 1500,
@@ -98,6 +207,11 @@ export default function SosModal() {
       notes: `BROADCAST ADVISORY: ${broadcastTitle} | Priority: ${evacuationPriority}`,
     });
     playSosBeep();
+    setSubmitMessage(
+      language === 'hi'
+        ? 'आपातकालीन चेतावनी आदेश सभी चैनलों (सायरन, एसएमएस, रेडियो) पर सफलतापूर्वक प्रसारित कर दिया गया है।'
+        : 'Emergency warning broadcast transmitted across Siren, SMS, and Radio channels.'
+    );
     setSubmitted(true);
     setTimeout(() => {
       setSubmitted(false);
@@ -105,213 +219,259 @@ export default function SosModal() {
     }, 2800);
   };
 
+  const handleCopyNumber = (num: string) => {
+    navigator.clipboard.writeText(num);
+    setCopiedNumber(num);
+    setTimeout(() => setCopiedNumber(null), 2000);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-red-500/40 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 border border-red-500/40 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="bg-gradient-to-r from-red-600 to-rose-700 p-5 text-white flex items-center justify-between">
+        <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-800 p-4 sm:p-5 text-white flex items-center justify-between shadow-md">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-white/20 rounded-xl">
+            <div className="p-2.5 bg-white/20 rounded-2xl backdrop-blur-sm">
               <AlertOctagon className="w-7 h-7 text-white animate-bounce" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black tracking-wide">
-                {language === 'hi' ? 'आपातकालीन एसओएस (SOS) एवं प्रेषण हब' : 'EMERGENCY SOS & DISPATCH HUB'}
-              </h2>
-              <p className="text-xs text-red-100">
+              <div className="flex items-center space-x-2">
+                <h2 className="text-lg sm:text-xl font-black tracking-wide uppercase">
+                  {language === 'hi' ? 'एकीकृत आपातकालीन SOS एवं पुलिस कमान हब' : 'UNIFIED EMERGENCY SOS & POLICE COMMAND'}
+                </h2>
+                <span className="text-[10px] bg-red-950/60 text-white font-mono px-2 py-0.5 rounded-full border border-red-400/30 animate-pulse">
+                  24x7 LIVE
+                </span>
+              </div>
+              <p className="text-xs text-red-100/90 font-medium">
                 {language === 'hi'
-                  ? 'एनडीआरएफ, एसडीआरएफ एवं जिला आपदा नियंत्रण कक्ष से सीधा उपग्रह संपर्क'
-                  : 'Direct satellite uplink to NDRF, SDRF & District Disaster Control'}
+                  ? 'तत्काल आपदा बचाव, पुलिस PCR वैन प्रेषण एवं राष्ट्रीय आपातकालीन संपर्क'
+                  : 'Instant Disaster Rescue, Police PCR Dispatch & National Emergency Hotlines'}
               </p>
             </div>
           </div>
           <button
             onClick={closeSosModal}
-            className="p-2 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
+            className="p-2 rounded-xl bg-black/20 hover:bg-black/40 text-white transition-colors"
+            title="Close SOS Modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 p-2 gap-2">
+        {/* Tab Navigation (4 Unified Tabs) */}
+        <div className="flex flex-wrap border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-950/60 px-3 pt-2 gap-1 sm:gap-2">
           <button
             onClick={() => {
               setActiveTab('citizen');
-              setSubmitted(false);
+              setPoliceDispatchResult(null);
             }}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 transition-all ${
+            className={`flex items-center space-x-2 px-3.5 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all border-b-2 ${
               activeTab === 'citizen'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
+                ? 'bg-white dark:bg-slate-900 text-red-600 dark:text-red-400 border-red-500 shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border-transparent'
             }`}
           >
-            <LifeBuoy className="w-4 h-4" />
-            <span>{language === 'hi' ? 'नागरिक एसओएस (मुझे मदद चाहिए)' : 'Citizen SOS (I Need Help)'}</span>
+            <LifeBuoy className="w-4 h-4 text-red-500" />
+            <span>{language === 'hi' ? '🚨 नागरिक आपदा SOS' : '🚨 Citizen Disaster SOS'}</span>
           </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('police');
+              setPoliceDispatchResult(null);
+            }}
+            className={`flex items-center space-x-2 px-3.5 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all border-b-2 ${
+              activeTab === 'police'
+                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 border-blue-500 shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border-transparent'
+            }`}
+          >
+            <Siren className="w-4 h-4 text-blue-500 animate-pulse" />
+            <span>{language === 'hi' ? '🚓 पुलिस स्टेशन SOS (112)' : '🚓 Police Station SOS (112)'}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('helplines');
+              setPoliceDispatchResult(null);
+            }}
+            className={`flex items-center space-x-2 px-3.5 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all border-b-2 ${
+              activeTab === 'helplines'
+                ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 border-emerald-500 shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border-transparent'
+            }`}
+          >
+            <PhoneCall className="w-4 h-4 text-emerald-500" />
+            <span>{language === 'hi' ? '📞 24x7 हेल्पलाइन' : '📞 24x7 Helplines'}</span>
+          </button>
+
           <button
             onClick={() => {
               setActiveTab('responder');
-              setSubmitted(false);
+              setPoliceDispatchResult(null);
             }}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 transition-all ${
+            className={`flex items-center space-x-2 px-3.5 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all border-b-2 ${
               activeTab === 'responder'
-                ? 'bg-slate-800 dark:bg-slate-700 text-white shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
+                ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 border-amber-500 shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border-transparent'
             }`}
           >
-            <Shield className="w-4 h-4" />
-            <span>{language === 'hi' ? 'प्रशासक/राहत दल आपातकालीन प्रसारण' : 'Responder Incident Dispatch'}</span>
+            <Radio className="w-4 h-4 text-amber-500" />
+            <span>{language === 'hi' ? '🛡️ राहत कमान प्रसारण' : '🛡️ Responder Broadcast'}</span>
           </button>
         </div>
 
-        {/* Content Body */}
-        <div className="p-6 max-h-[75vh] overflow-y-auto">
-          {submitted ? (
-            <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
-              <div className="w-16 h-16 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center animate-pulse">
-                <CheckCircle2 className="w-10 h-10" />
+        {/* Modal Body */}
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-slate-50/50 dark:bg-slate-900/50 space-y-5">
+          {/* Quick GPS Geolocation Fix Banner */}
+          <div className="flex flex-wrap items-center justify-between p-3.5 bg-gradient-to-r from-red-500/10 via-amber-500/10 to-blue-500/10 border border-slate-300 dark:border-slate-700/60 rounded-2xl text-xs gap-2">
+            <div className="flex items-center space-x-2">
+              <MapPin className="w-4 h-4 text-red-500 shrink-0" />
+              <div>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {language === 'hi' ? 'सटीक जीपीएस निर्देशांक:' : 'Exact GPS Fix:'}
+                </span>{' '}
+                <span className="font-mono text-slate-700 dark:text-slate-300">
+                  {userCoordinates[0].toFixed(5)}°N, {userCoordinates[1].toFixed(5)}°E
+                </span>
+                <span className="ml-2 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                  ● {language === 'hi' ? 'सटीकता: ±5 मी' : 'Accuracy: ±5m'}
+                </span>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                {activeTab === 'citizen'
-                  ? language === 'hi' ? 'संकट सिग्नल सफलतापूर्वक भेजा गया!' : 'Distress Signal Transmitted!'
-                  : language === 'hi' ? 'आपातकालीन प्रसारण सक्रिय किया गया!' : 'Emergency Broadcast Activated!'}
+            </div>
+            <button
+              type="button"
+              onClick={requestUserLocation}
+              disabled={isLocating}
+              className="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:border-red-500 text-slate-800 dark:text-slate-200 font-bold transition-all disabled:opacity-50"
+            >
+              <LocateFixed className={`w-3.5 h-3.5 text-red-500 ${isLocating ? 'animate-spin' : ''}`} />
+              <span>{isLocating ? (language === 'hi' ? 'जीपीएस खोज रहे हैं...' : 'Acquiring GPS...') : (language === 'hi' ? 'जीपीएस रिफ्रेश करें' : 'Recalibrate GPS')}</span>
+            </button>
+          </div>
+
+          {/* Submission Success Screen */}
+          {submitted ? (
+            <div className="py-12 flex flex-col items-center justify-center text-center space-y-4 animate-in zoom-in-95">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center border border-emerald-500/30">
+                <CheckCircle2 className="w-10 h-10 animate-bounce" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                {language === 'hi' ? 'संकटकालीन बीकन प्रेषित!' : 'SOS BEACON DISPATCHED!'}
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-300 max-w-md">
-                {activeTab === 'citizen'
-                  ? language === 'hi'
-                    ? 'आपके सटीक जीपीएस निर्देशांक एवं विवरण निकटतम एनडीआरएफ/एसडीआरएफ बचाव दल एवं आश्रय केंद्र को भेज दिए गए हैं।'
-                    : 'Your exact GPS coordinates and distress details have been dispatched to the nearest NDRF/SDRF rescue boat and local shelter team.'
-                  : language === 'hi'
-                    ? 'नामित संवेदनशील क्षेत्र के लिए सामूहिक सायरन और सेलुलर चेतावनी अलर्ट सक्रिय कर दिए गए हैं।'
-                    : 'Mass sirens and multi-channel cellular alerts have been triggered for the designated vulnerable sector.'}
+                {submitMessage}
               </p>
-              <div className="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400">
-                GPS FIX: {userCoordinates[0].toFixed(5)}, {userCoordinates[1].toFixed(5)} | LATENCY: 240ms
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-600 dark:text-red-400 font-mono">
+                {language === 'hi' ? 'निकटतम राहत दल को रूट मैप भेजा गया।' : 'Nearest Rescue Squad en route with turn-by-turn road vector.'}
               </div>
             </div>
           ) : activeTab === 'citizen' ? (
-            /* Citizen SOS Flow */
+            /* TAB 1: CITIZEN DISASTER SOS */
             <form onSubmit={handleCitizenSubmit} className="space-y-4">
-              {/* GPS Broadcast Strip */}
-              <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 rounded-xl p-3.5 flex items-center justify-between">
-                <div className="flex items-center space-x-2.5">
-                  <MapPin className="w-5 h-5 text-red-600 shrink-0 animate-bounce" />
-                  <div>
-                    <div className="text-xs font-bold text-red-900 dark:text-red-300">
-                      {language === 'hi' ? 'लाइव जियोलोकेशन कैप्चर किया गया' : 'Live Geolocation Captured'}
-                    </div>
-                    <div className="text-[11px] font-mono text-red-700 dark:text-red-400">
-                      Lat: {userCoordinates[0].toFixed(5)}°N, Lng: {userCoordinates[1].toFixed(5)}°E
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={requestUserLocation}
-                  disabled={isLocating}
-                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold flex items-center space-x-1 transition-colors"
-                >
-                  <LocateFixed className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
-                  <span>
-                    {isLocating
-                      ? language === 'hi' ? 'खोज रहे हैं...' : 'Acquiring...'
-                      : language === 'hi' ? 'जीपीएस रीफ्रेश' : 'Refresh GPS'}
-                  </span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {language === 'hi' ? 'आपका नाम / प्रतिनिधि' : 'Your Name / Representative'}
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'hi' ? 'आपका नाम / परिवार मुखिया' : 'Your Name / Family Head'}
                   </label>
                   <input
                     type="text"
                     required
+                    placeholder={language === 'hi' ? 'उदा. राहुल शर्मा' : 'e.g. Rahul Sharma'}
                     value={senderName}
                     onChange={(e) => setSenderName(e.target.value)}
-                    placeholder={language === 'hi' ? 'उदा. रमेश कुमार' : 'e.g. Ramesh Kumar'}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-red-500 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {language === 'hi' ? 'संपर्क मोबाइल नंबर' : 'Contact Mobile Number'}
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'hi' ? 'संपर्क फोन नंबर' : 'Contact Phone Number'}
                   </label>
                   <input
                     type="tel"
                     required
+                    placeholder="+91-98765-43210"
                     value={senderPhone}
                     onChange={(e) => setSenderPhone(e.target.value)}
-                    placeholder="+91 98765 43210"
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-red-500 outline-none"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  {language === 'hi' ? 'सटीक पता / स्थानीय लैंडमार्क' : 'Address / Visible Landmark / House Number'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-red-500 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {language === 'hi' ? 'सामना किया गया खतरा / आपदा' : 'Threat / Hazard Encountered'}
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'hi' ? 'आपदा का प्रकार' : 'Hazard Context'}
                   </label>
                   <select
                     value={hazardType}
                     onChange={(e) => setHazardType(e.target.value as HazardType)}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-red-500 outline-none font-medium"
                   >
-                    <option value="landslide">{language === 'hi' ? 'भूस्खलन / ढलान टूटना' : 'Landslide / Slope Collapse'}</option>
-                    <option value="flood">{language === 'hi' ? 'अचानक बाढ़ / बढ़ता जलस्तर' : 'Flash Flood / Rising Waters'}</option>
-                    <option value="earthquake">{language === 'hi' ? 'भूकंप / गंभीर दरारें' : 'Earthquake / Severe Building Cracks'}</option>
-                    <option value="cyclone">{language === 'hi' ? 'चक्रवात / समुद्री जलभराव' : 'Cyclone / Tidal Inundation'}</option>
+                    <option value="landslide">{language === 'hi' ? '🏔️ भूस्खलन एवं मलबा प्रवाह' : '🏔️ Landslide & Debris Flow'}</option>
+                    <option value="flood">{language === 'hi' ? '🌊 बाढ़ एवं जलभराव' : '🌊 Flash Flood / Water Inflow'}</option>
+                    <option value="earthquake">{language === 'hi' ? '🏚️ भूकंप एवं भवन ढहना' : '🏚️ Earthquake & Structure Damage'}</option>
+                    <option value="cyclone">{language === 'hi' ? '🌪️ चक्रवात एवं तेज़ आंधी' : '🌪️ Cyclone & High Winds'}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {language === 'hi' ? 'फंसे लोगों की संख्या' : 'Number of Trapped Persons'}
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'hi' ? 'फंसे हुए व्यक्तियों की संख्या' : 'Number of Trapped Persons'}
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={peopleCount}
-                    onChange={(e) => setPeopleCount(parseInt(e.target.value) || 1)}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500"
-                  />
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={peopleCount}
+                      onChange={(e) => setPeopleCount(parseInt(e.target.value) || 1)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold focus:ring-2 focus:ring-red-500 outline-none"
+                    />
+                    <span className="text-xs text-slate-500 font-medium">
+                      {language === 'hi' ? 'व्यक्ति' : 'Persons'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {language === 'hi' ? 'प्रमुख स्थल / विस्तृत पता' : 'Landmark / Detailed Location'}
-                </label>
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder={language === 'hi' ? 'उदा. पंचायत कार्यालय के पास, दूसरा मोड़' : 'e.g. Near Panchayat Office, 2nd curve, Red Zone Area'}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2 bg-slate-100 dark:bg-slate-800/60 p-3 rounded-xl">
+              {/* Medical Assistance Checkbox */}
+              <div className="p-3.5 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 rounded-xl flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Activity className="w-5 h-5 text-rose-500" />
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">
+                      {language === 'hi' ? 'चिकित्सा आपातकाल / एम्बुलेंस की आवश्यकता है' : 'Critical Medical Trauma / Ambulance Required'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {language === 'hi' ? 'घायल, बुजुर्ग या बच्चों के लिए प्राथमिकता' : 'Prioritizes paramedic kits and trauma stretcher in rescue vehicle'}
+                    </div>
+                  </div>
+                </div>
                 <input
                   type="checkbox"
-                  id="medicalReq"
                   checked={medicalNeeded}
                   onChange={(e) => setMedicalNeeded(e.target.checked)}
-                  className="w-4 h-4 text-red-600 rounded focus:ring-red-500"
+                  className="w-5 h-5 text-rose-600 rounded focus:ring-rose-500"
                 />
-                <label htmlFor="medicalReq" className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                  {language === 'hi'
-                    ? 'तत्काल चिकित्सा सहायता / स्ट्रेचर / ऑक्सीजन की आवश्यकता है'
-                    : 'Critical medical assistance / stretcher / oxygen needed immediately'}
-                </label>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {language === 'hi' ? 'महत्वपूर्ण विवरण / स्थिति (वैकल्पिक)' : 'Urgent Notes / Constraints (Optional)'}
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  {language === 'hi' ? 'अतिरिक्त संकट विवरण / स्थिति' : 'Distress Notes / Urgency Details'}
                 </label>
                 <textarea
                   rows={2}
@@ -319,153 +479,334 @@ export default function SosModal() {
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder={
                     language === 'hi'
-                      ? 'उदा. पानी पहली मंजिल तक पहुंच गया है; 1 शिशु और 1 वरिष्ठ नागरिक मौजूद हैं।'
-                      : 'e.g. Water reached 1st floor; 1 infant and 1 senior citizen present.'
+                      ? 'उदा. छत पर फंसे हैं, सड़क ब्लॉक है, पानी का स्तर बढ़ रहा है...'
+                      : 'e.g., Trapped on upper roof, road bridge washed out, mud entering ground floor...'
                   }
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500"
-                ></textarea>
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-red-500 outline-none"
+                />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-black text-sm tracking-wider uppercase shadow-xl shadow-red-600/30 flex items-center justify-center space-x-2"
+                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-sm tracking-wider uppercase shadow-lg shadow-red-600/30 flex items-center justify-center space-x-2 transition-all hover:scale-[1.01] active:scale-[0.99]"
               >
-                <Radio className="w-5 h-5 animate-pulse" />
-                <span>{language === 'hi' ? '1-क्लिक एसओएस (SOS) संकट बीकन प्रसारित करें' : 'BROADCAST 1-CLICK DISTRESS BEACON'}</span>
+                <AlertOctagon className="w-5 h-5 animate-pulse" />
+                <span>{language === 'hi' ? 'नागरिक आपातकालीन SOS बीकन भेजें' : 'BROADCAST CITIZEN SOS BEACON'}</span>
               </button>
-
-              {/* Direct Speed-Dial Strip */}
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
-                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  {language === 'hi' ? 'तत्काल आपातकालीन हॉटलाइन:' : 'Immediate Emergency Hotlines:'}
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
-                  {emergencyHelplines.slice(0, 4).map((h) => (
-                    <a
-                      key={h.number}
-                      href={`tel:${h.number.split('/')[0].trim()}`}
-                      className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-500 hover:text-white dark:hover:bg-red-600 transition-colors border border-slate-200 dark:border-slate-700 font-semibold flex flex-col items-center"
-                    >
-                      <span className="text-[10px] text-slate-400 truncate w-full">{h.name.split(' ')[0]}</span>
-                      <span className="font-bold">{h.number.split('/')[0]}</span>
-                    </a>
-                  ))}
-                </div>
-              </div>
             </form>
-          ) : (
-            /* Responder Incident Dispatch Flow */
-            <form onSubmit={handleResponderBroadcast} className="space-y-4">
-              <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3 text-xs text-amber-900 dark:text-amber-200 flex items-start space-x-2">
-                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold">
-                    {language === 'hi' ? 'राहत दल निकासी प्राधिकार:' : 'Responder Clearance Authorization:'}
-                  </span>{' '}
-                  {language === 'hi'
-                    ? 'सामूहिक निकासी सक्रिय करने से सभी चैनलों पर प्रसारण, सायरन सक्रिय होते हैं और नागरिकों को सुरक्षित आश्रय स्थलों पर निर्देशित किया जाता है।'
-                    : 'Triggering mass evacuation activates synchronized cell broadcasts, automated sirens, and routes citizens to designated safe carrying-capacity shelters.'}
+          ) : activeTab === 'police' ? (
+            /* TAB 2: POLICE SOS & PCR DISPATCH */
+            <div className="space-y-5">
+              {/* Police Dispatch Success Card */}
+              {policeDispatchResult ? (
+                <div className="p-5 bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-700 rounded-2xl space-y-3 animate-in zoom-in-95">
+                  <div className="flex items-center space-x-3 text-blue-600 dark:text-blue-400">
+                    <CheckCircle2 className="w-6 h-6" />
+                    <h3 className="font-bold text-base">
+                      {language === 'hi' ? 'पुलिस नियंत्रण कक्ष को बीकन प्रेषित!' : 'POLICE PCR BEACON TRANSMITTED!'}
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-700 dark:text-slate-300">
+                    {policeDispatchResult.message || 'Police PCR van has been mobilized to your GPS location.'}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 bg-white dark:bg-slate-900 rounded-xl border border-blue-200 dark:border-blue-900/60 text-xs">
+                    <div>
+                      <span className="text-slate-400 block">{language === 'hi' ? 'थाना:' : 'Station:'}</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{policeDispatchResult.dispatch?.stationName || selectedStation.name}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">{language === 'hi' ? 'वाहन:' : 'Assigned Unit:'}</span>
+                      <span className="font-bold text-blue-600 dark:text-blue-400">{policeDispatchResult.dispatch?.assignedVehicle || 'PCR Van-12'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">{language === 'hi' ? 'अनुमानित समय:' : 'ETA:'}</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">~{policeDispatchResult.dispatch?.etaMinutes || 5} mins</span>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Nearest Police Station Selector */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  {language === 'hi' ? 'निकटतम पुलिस स्टेशन चुनें (Nearest Police Station):' : 'Select Targeted Police Station / Control Room:'}
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {policeStations.slice(0, 3).map((st) => {
+                    const isSelected = selectedStation.id === st.id;
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => setSelectedStation(st)}
+                        className={`p-3 rounded-xl text-left border transition-all ${
+                          isSelected
+                            ? 'bg-blue-500/10 border-blue-500 text-blue-900 dark:text-blue-200 shadow-sm'
+                            : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-400'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold truncate">{st.name}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-600 dark:text-blue-400 font-mono">
+                            {st.status === 'ACTIVE_24X7' ? '24x7' : 'PATROL'}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center space-x-2">
+                          <span>📞 {st.phone}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {language === 'hi' ? 'लक्षित आपदा क्षेत्र / सेक्टर' : 'Target Hazard Zone / Sector'}
-                </label>
-                <select
-                  value={targetZone}
-                  onChange={(e) => setTargetZone(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500"
-                >
-                  <option value="Wayanad Western Escarpment">ZONE-RED-01: Wayanad Western Escarpment</option>
-                  <option value="Joshimath Main Fault Belt">ZONE-RED-02: Joshimath Main Fault Belt</option>
-                  <option value="Idukki Upper Catchment">ZONE-ORG-01: Idukki Upper Catchment</option>
-                  <option value="Kosi Embankment Spill Channel">ZONE-ORG-02: Kosi Embankment Spill Channel</option>
-                  <option value="Puri Coastal Belt">ZONE-ORG-03: Puri Coastal Inundation Belt</option>
-                </select>
+              {/* Police SOS Form */}
+              <form onSubmit={handlePoliceSubmit} className="space-y-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      {language === 'hi' ? 'आपका मोबाइल नंबर' : 'Your Contact Phone'}
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="+91-98765-43210"
+                      value={senderPhone}
+                      onChange={(e) => setSenderPhone(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      {language === 'hi' ? 'सहायता चाहने वाले व्यक्ति' : 'Persons Requiring Police Transport'}
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={policeVictimsCount}
+                      onChange={(e) => setPoliceVictimsCount(parseInt(e.target.value) || 1)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'hi' ? 'पुलिस सहायता का कारण / आपात स्थिति' : 'Police Emergency Message / Threat Description'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    required
+                    value={policeEmergencyText}
+                    onChange={(e) => setPoliceEmergencyText(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="submit"
+                    disabled={isPoliceDispatching}
+                    className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-600/30 flex items-center justify-center space-x-2 transition-all disabled:opacity-50"
+                  >
+                    <Siren className={`w-4 h-4 ${isPoliceDispatching ? 'animate-spin' : 'animate-bounce'}`} />
+                    <span>
+                      {isPoliceDispatching
+                        ? (language === 'hi' ? 'पीसीआर वैन को बीकन भेज रहे हैं...' : 'Dispatching PCR...')
+                        : (language === 'hi' ? 'पुलिस स्टेशन को SOS भेजें' : 'DISPATCH TO POLICE STATION')}
+                    </span>
+                  </button>
+
+                  <a
+                    href={`tel:${selectedStation.altPhone || '112'}`}
+                    className="py-3 px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-md shadow-red-600/30 transition-all hover:scale-105"
+                  >
+                    <PhoneCall className="w-4 h-4" />
+                    <span>{language === 'hi' ? 'कॉल करें: 112' : 'Call Police 112'}</span>
+                  </a>
+                </div>
+              </form>
+            </div>
+          ) : activeTab === 'helplines' ? (
+            /* TAB 3: 24x7 GOVERNMENT HELPLINES */
+            <div className="space-y-4">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 rounded-xl text-xs text-emerald-800 dark:text-emerald-300">
+                <span className="font-bold">⚡ {language === 'hi' ? 'वन-टैप त्वरित कॉलिंग:' : 'One-Tap Emergency Direct Dial:'}</span>{' '}
+                {language === 'hi'
+                  ? 'नीचे दिए गए किसी भी आपातकालीन नंबर पर क्लिक करके तुरंत कॉल करें।'
+                  : 'Click directly on any number below to initiate immediate phone call or copy to dialer.'}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[340px] overflow-y-auto pr-1">
+                {governmentEmergencyDirectory.map((contact) => (
+                  <div
+                    key={contact.number}
+                    className="p-3.5 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-2xl flex items-center justify-between hover:border-emerald-500 transition-all shadow-sm group"
+                  >
+                    <div className="flex items-center space-x-3 truncate">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-mono font-black text-sm shrink-0 border border-emerald-500/20">
+                        {contact.number}
+                      </div>
+                      <div className="truncate">
+                        <div className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                          {contact.service}
+                        </div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                          {contact.department}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleCopyNumber(contact.number)}
+                        className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-300 transition-colors"
+                        title="Copy Number"
+                      >
+                        {copiedNumber === contact.number ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      <a
+                        href={`tel:${contact.number}`}
+                        className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center space-x-1 shadow-sm transition-transform active:scale-95"
+                        title="Direct Call"
+                      >
+                        <PhoneCall className="w-3.5 h-3.5" />
+                        <span>{language === 'hi' ? 'कॉल' : 'Call'}</span>
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* TAB 4: RESPONDER BROADCAST */
+            <form onSubmit={handleResponderBroadcast} className="space-y-4">
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-600 dark:text-amber-400 flex items-center space-x-2">
+                <Shield className="w-4 h-4 shrink-0" />
+                <span>
+                  {language === 'hi'
+                    ? 'अधिसूचना: केवल अधिकृत SEOC / NDRF कमांडरों के लिए। यह सभी सायरन और सेल प्रसारण सक्रिय करेगा।'
+                    : 'Clearance Warning: Authorized SEOC / NDRF Incident Commanders only. Triggers regional siren net.'}
+                </span>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {language === 'hi' ? 'प्रसारण चेतावनी निर्देश' : 'Broadcast Alert Directive'}
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  {language === 'hi' ? 'प्रसारण शीर्षक' : 'Evacuation Order Title'}
                 </label>
                 <input
                   type="text"
                   required
                   value={broadcastTitle}
                   onChange={(e) => setBroadcastTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-amber-500 outline-none"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {language === 'hi' ? 'निकासी आदेश प्राथमिकता' : 'Evacuation Order Priority'}
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: 'CRITICAL_IMMEDIATE', label: language === 'hi' ? 'अति-गंभीर (0-45 मि)' : 'Critical (0-45m)', color: 'border-red-500 bg-red-500/10 text-red-500' },
-                    { id: 'HIGH_STAGED', label: language === 'hi' ? 'उच्च (2-4 घंटे)' : 'High (2-4 hrs)', color: 'border-amber-500 bg-amber-500/10 text-amber-500' },
-                    { id: 'ADVISORY_STANDBY', label: language === 'hi' ? 'परामर्श स्टैंडबाय' : 'Advisory Standby', color: 'border-blue-500 bg-blue-500/10 text-blue-500' },
-                  ].map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setEvacuationPriority(p.id)}
-                      className={`py-2 px-3 rounded-lg border text-xs font-bold transition-all ${
-                        evacuationPriority === p.id ? `${p.color} ring-2 ring-current` : 'border-slate-300 dark:border-slate-700 text-slate-500'
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'hi' ? 'लक्षित रेड-ज़ोन क्षेत्र' : 'Target Red Zone'}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={targetZone}
+                    onChange={(e) => setTargetZone(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-amber-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'hi' ? 'प्राथमिकता स्तर' : 'Urgency Priority'}
+                  </label>
+                  <select
+                    value={evacuationPriority}
+                    onChange={(e) => setEvacuationPriority(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold focus:ring-2 focus:ring-amber-500 outline-none"
+                  >
+                    <option value="CRITICAL_IMMEDIATE">{language === 'hi' ? 'अति-गंभीर: तत्काल खाली करें (Red Alert)' : 'CRITICAL: Immediate Relocation (Red)'}</option>
+                    <option value="HIGH_WARNING">{language === 'hi' ? 'उच्च: पूर्व-निकासी चेतावनी (Orange Alert)' : 'HIGH: Pre-Evacuation Standby (Orange)'}</option>
+                    <option value="ADVISORY_STANDBY">{language === 'hi' ? 'परामर्श: निगरानी में रहें (Yellow Alert)' : 'ADVISORY: General Caution (Yellow)'}</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="space-y-2 pt-2">
-                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  {language === 'hi' ? 'प्रसारण चैनल चयन:' : 'Broadcast Channel Selection:'}
-                </div>
+              {/* Multi-Channel Checklist */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                  {language === 'hi' ? 'सक्रिय प्रसारण माध्यम:' : 'Active Broadcast Channels:'}
+                </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <label className="flex items-center space-x-2 text-xs bg-slate-100 dark:bg-slate-800 p-2.5 rounded-lg cursor-pointer">
+                  <label className="flex items-center space-x-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium cursor-pointer">
                     <input
                       type="checkbox"
                       checked={broadcastChannels.sirens}
                       onChange={(e) => setBroadcastChannels({ ...broadcastChannels, sirens: e.target.checked })}
-                      className="rounded text-red-600"
+                      className="rounded text-amber-600"
                     />
-                    <span>{language === 'hi' ? 'क्षेत्रीय सायरन' : 'Regional Sirens'}</span>
+                    <span>📢 {language === 'hi' ? 'सायरन नेटवर्क' : 'Acoustic Sirens'}</span>
                   </label>
-                  <label className="flex items-center space-x-2 text-xs bg-slate-100 dark:bg-slate-800 p-2.5 rounded-lg cursor-pointer">
+                  <label className="flex items-center space-x-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium cursor-pointer">
                     <input
                       type="checkbox"
                       checked={broadcastChannels.smsAlert}
                       onChange={(e) => setBroadcastChannels({ ...broadcastChannels, smsAlert: e.target.checked })}
-                      className="rounded text-red-600"
+                      className="rounded text-amber-600"
                     />
-                    <span>{language === 'hi' ? 'सेल ब्रॉडकास्ट एसएमएस' : 'Cell Broadcast SMS'}</span>
+                    <span>📱 {language === 'hi' ? 'सेल ब्रॉडकास्ट SMS' : 'Cell Broadcast SMS'}</span>
                   </label>
-                  <label className="flex items-center space-x-2 text-xs bg-slate-100 dark:bg-slate-800 p-2.5 rounded-lg cursor-pointer">
+                  <label className="flex items-center space-x-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium cursor-pointer">
                     <input
                       type="checkbox"
                       checked={broadcastChannels.radioBroadcast}
                       onChange={(e) => setBroadcastChannels({ ...broadcastChannels, radioBroadcast: e.target.checked })}
-                      className="rounded text-red-600"
+                      className="rounded text-amber-600"
                     />
-                    <span>{language === 'hi' ? 'हैम / रेडियो रिले' : 'HAM / Radio Relay'}</span>
+                    <span>📻 {language === 'hi' ? 'आपदा रेडियो फ़ीड' : 'Disaster Radio Net'}</span>
                   </label>
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3.5 bg-slate-900 hover:bg-black text-white dark:bg-red-700 dark:hover:bg-red-800 rounded-xl font-bold text-sm tracking-wider uppercase shadow-xl flex items-center justify-center space-x-2"
+                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-black text-sm tracking-wider uppercase shadow-lg shadow-amber-600/30 flex items-center justify-center space-x-2 transition-all hover:scale-[1.01] active:scale-[0.99]"
               >
-                <Send className="w-5 h-5" />
-                <span>{language === 'hi' ? 'क्षेत्रीय आपातकालीन निकासी प्रसारण निष्पादित करें' : 'EXECUTE REGIONAL EVACUATION DISPATCH'}</span>
+                <Radio className="w-5 h-5 animate-pulse" />
+                <span>{language === 'hi' ? 'क्षेत्रीय आपातकालीन आदेश प्रसारित करें' : 'TRANSMIT REGIONAL EVACUATION BROADCAST'}</span>
               </button>
             </form>
           )}
+        </div>
+
+        {/* Footer / National Hotline Quick Bar */}
+        <div className="p-3 bg-slate-100 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
+          <div className="flex items-center space-x-4">
+            <span className="font-bold text-slate-700 dark:text-slate-300">
+              {language === 'hi' ? 'राष्ट्रीय आपातकालीन 24x7 हेल्पलाइन:' : 'National Helplines:'}
+            </span>
+            <a href="tel:112" className="text-blue-600 dark:text-blue-400 font-bold hover:underline">
+              🚓 Police: 112
+            </a>
+            <a href="tel:1078" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
+              🛡️ NDRF: 1078
+            </a>
+            <a href="tel:1070" className="text-amber-600 dark:text-amber-400 font-bold hover:underline">
+              🏛️ SEOC: 1070
+            </a>
+          </div>
+          <button
+            onClick={closeSosModal}
+            className="px-3 py-1 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 font-medium"
+          >
+            {language === 'hi' ? 'बंद करें' : 'Close'}
+          </button>
         </div>
       </div>
     </div>

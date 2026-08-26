@@ -27,6 +27,7 @@ import {
   UserCheck,
   Eye,
   LogOut,
+  Mic,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -39,6 +40,7 @@ export default function Navbar() {
     toggleEmergencySiren,
     activeAlertCount,
     openPoliceModal,
+    openVoiceAssistant,
     currentUser,
     setIsAuthModalOpen,
     logout,
@@ -59,8 +61,8 @@ export default function Navbar() {
           hour: '2-digit',
           minute: '2-digit',
           second: '2-digit',
-          hour12: false,
-        }) + ' UTC+5:30'
+          hour12: true,
+        })
       );
     };
     updateTime();
@@ -69,21 +71,27 @@ export default function Navbar() {
   }, []);
 
   const navLinks = [
-    { href: '/', label: t('nav.home', 'Overview'), icon: ShieldAlert },
-    { href: '/red-zones', label: t('nav.redZones', 'Red-Zones'), icon: MapPin },
-    { href: '/relocation', label: t('nav.relocation', 'Relocation Guide'), icon: Compass },
-    { href: '/shelters', label: t('nav.shelters', 'Safe Shelters'), icon: Building2 },
-    { href: '/predictions', label: t('nav.predictions', 'AI Predictions'), icon: TrendingUp },
-    { href: '/admin', label: t('nav.admin', 'SEOC Command'), icon: SlidersHorizontal },
-    { href: '/resources', label: language === 'hi' ? 'दिशानिर्देश व SOPs' : 'Awareness & SOPs', icon: BookOpen },
+    { href: '/', label: language === 'hi' ? 'अवलोकन' : 'Overview', icon: Compass },
+    { href: '/red-zones', label: language === 'hi' ? 'रेड ज़ोन' : 'Red Zones', icon: MapPin },
+    { href: '/shelters', label: language === 'hi' ? 'सुरक्षित आश्रय' : 'Safe Havens', icon: Building2 },
+    { href: '/relocation', label: language === 'hi' ? 'पुनर्वास मार्ग' : 'Relocation Guide', icon: TrendingUp },
+    { href: '/predictions', label: language === 'hi' ? 'एआई पूर्वानुमान' : 'AI Predictions', icon: SlidersHorizontal },
+    { href: '/resources', label: language === 'hi' ? 'आपदा गाइड' : 'SOP & Resources', icon: BookOpen },
+    { href: '/admin', label: language === 'hi' ? 'नियंत्रण केंद्र' : 'SEOC Console', icon: ShieldAlert },
   ];
 
   const roleLabel =
     currentUser?.role === 'ADMIN'
-      ? (language === 'hi' ? 'SEOC प्रशासक' : 'SEOC Admin')
+      ? language === 'hi'
+        ? 'प्रशासक'
+        : 'SEOC Admin'
       : currentUser?.role === 'STAFF'
-      ? (language === 'hi' ? 'NDRF स्टाफ' : 'NDRF Staff')
-      : (language === 'hi' ? 'नागरिक दर्शक' : 'Citizen Guest');
+      ? language === 'hi'
+        ? 'राहत दल'
+        : 'Field Staff'
+      : language === 'hi'
+      ? 'नागरिक दर्शक'
+      : 'Citizen View';
 
   const roleBadgeColor =
     currentUser?.role === 'ADMIN'
@@ -173,8 +181,8 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Actions: Language Toggle, Police SOS, Auth Badge, Theme Toggle, Siren, SOS Trigger */}
-          <div className="flex items-center space-x-2 sm:space-x-2.5">
+          {/* Actions: Language Toggle, Voice Assistant, Police/SOS, Auth Badge, Theme Toggle */}
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
             {/* Language Switcher Button (EN / हिन्दी) */}
             <button
               onClick={toggleLanguage}
@@ -185,14 +193,24 @@ export default function Navbar() {
               <span className="font-bold">{language === 'en' ? 'हिन्दी' : 'English'}</span>
             </button>
 
-            {/* Police SOS Button */}
+            {/* Voice Assistant Trigger Button */}
             <button
-              onClick={openPoliceModal}
-              className="flex items-center space-x-1.5 px-2.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 transition-all hover:scale-105"
-              title="Dispatch SOS to Nearest Police Station & Government Numbers"
+              onClick={openVoiceAssistant}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md shadow-violet-600/20 transition-all hover:scale-105"
+              title="Open Dhristi AI Voice Assistant (Vaani)"
+            >
+              <Mic className="w-3.5 h-3.5 animate-pulse" />
+              <span className="hidden sm:inline">{language === 'hi' ? 'वाणी AI' : 'Vaani AI'}</span>
+            </button>
+
+            {/* Police PCR SOS Quick Shortcut */}
+            <button
+              onClick={() => openSosModal('police')}
+              className="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 transition-all hover:scale-105"
+              title="Dispatch SOS to Nearest Police Station & PCR 112"
             >
               <Siren className="w-3.5 h-3.5 animate-bounce" />
-              <span className="hidden sm:inline">{language === 'hi' ? 'पुलिस 112' : 'Police SOS'}</span>
+              <span>{language === 'hi' ? 'पुलिस 112' : 'Police 112'}</span>
             </button>
 
             {/* Auth / Role Indicator */}
@@ -211,19 +229,6 @@ export default function Navbar() {
               <span>{roleLabel}</span>
             </button>
 
-            {/* Siren audio simulation toggle */}
-            <button
-              onClick={toggleEmergencySiren}
-              title={isSirenPlaying ? 'Mute Alert Siren' : 'Test Emergency Siren'}
-              className={`p-2 rounded-lg text-xs font-medium border transition-colors ${
-                isSirenPlaying
-                  ? 'bg-amber-500/20 text-amber-500 border-amber-500/40 animate-pulse'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-              }`}
-            >
-              {isSirenPlaying ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </button>
-
             {/* Dark / Light Toggle */}
             <button
               onClick={toggleTheme}
@@ -233,16 +238,16 @@ export default function Navbar() {
               {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
             </button>
 
-            {/* Red Floating Emergency Button */}
+            {/* Unified Emergency SOS Main Button */}
             <button
               onClick={() => openSosModal('citizen')}
-              className="relative group flex items-center space-x-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-red-600/30 transition-all hover:scale-105 active:scale-95"
+              className="relative group flex items-center space-x-2 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-700 text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black shadow-lg shadow-red-600/30 transition-all hover:scale-105 active:scale-95"
             >
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
               </span>
-              <span className="tracking-wide">SOS</span>
+              <span className="tracking-wide">{language === 'hi' ? 'एसओएस' : 'SOS'}</span>
               {activeAlertCount > 0 && (
                 <span className="bg-red-950 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                   {activeAlertCount}
@@ -264,27 +269,37 @@ export default function Navbar() {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 pt-3 pb-6 space-y-2">
-          {/* Mobile Auth Role & Police Action */}
-          <div className="grid grid-cols-2 gap-2 pb-2">
+          {/* Mobile Auth Role, Voice Assistant & Police Action */}
+          <div className="grid grid-cols-3 gap-2 pb-2">
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
                 setIsAuthModalOpen(true);
               }}
-              className={`py-2 px-3 rounded-xl border ${roleBadgeColor} font-bold text-xs flex items-center justify-center space-x-1`}
+              className={`py-2 px-2 rounded-xl border ${roleBadgeColor} font-bold text-xs flex items-center justify-center space-x-1 truncate`}
             >
               <User className="w-3.5 h-3.5" />
-              <span>Role: {roleLabel}</span>
+              <span className="truncate">{roleLabel}</span>
             </button>
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                openPoliceModal();
+                openVoiceAssistant();
               }}
-              className="py-2 px-3 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center space-x-1"
+              className="py-2 px-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center space-x-1"
+            >
+              <Mic className="w-3.5 h-3.5" />
+              <span>{language === 'hi' ? 'वाणी AI' : 'Vaani AI'}</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                openSosModal('police');
+              }}
+              className="py-2 px-2 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center space-x-1"
             >
               <Siren className="w-3.5 h-3.5" />
-              <span>Police SOS</span>
+              <span>{language === 'hi' ? 'पुलिस 112' : 'Police 112'}</span>
             </button>
           </div>
           {navLinks.map((link) => {
@@ -314,7 +329,7 @@ export default function Navbar() {
               }}
               className="flex-1 py-2.5 text-center bg-red-600 text-white rounded-xl text-sm font-bold shadow"
             >
-              Broadcast Citizen SOS
+              {language === 'hi' ? '🚨 नागरिक आपातकालीन SOS' : '🚨 Citizen Emergency SOS'}
             </button>
             <button
               onClick={() => {
@@ -323,7 +338,7 @@ export default function Navbar() {
               }}
               className="flex-1 py-2.5 text-center bg-slate-800 text-white rounded-xl text-sm font-semibold border border-slate-700"
             >
-              Incident Dispatch
+              {language === 'hi' ? '🛡️ राहत दल प्रसारण' : '🛡️ Incident Dispatch'}
             </button>
           </div>
         </div>

@@ -95,15 +95,28 @@ export const translations: Record<Language, Record<string, string>> = {
     'admin.broadcastAlert': 'Multi-Channel Emergency Warning Broadcast',
     'admin.capacityOverride': 'Habitation Population & Capacity Stress Override',
 
-    // SOS & Police Modals
-    'sos.title': 'EMERGENCY CITIZEN SOS BEACON',
+    // SOS & Police Combined Modal
+    'sos.title': 'UNIFIED EMERGENCY SOS & INCIDENT DISPATCH',
     'sos.name': 'Your Name',
     'sos.phone': 'Contact Phone Number',
     'sos.trappedCount': 'Number of Trapped Persons',
     'sos.medicalReq': 'Medical Assistance Required (Ambulance)',
     'sos.transmitBtn': 'TRANSMIT CITIZEN SOS BEACON',
+    'sos.tabCitizen': '🚨 Citizen Disaster SOS',
+    'sos.tabPolice': '🚓 Police Station SOS (PCR 112)',
+    'sos.tabResponder': '🛡️ Responder Broadcast',
+    'sos.tabHelplines': '📞 24x7 Helplines',
     'police.title': 'Emergency Government Contacts & Police 112',
     'police.subtitle': 'Rapid one-tap calling for Police, NDRF, SDRF, Disaster Control, and Medical Emergencies',
+
+    // Voice Assistant
+    'voice.title': 'Dhristi AI Voice Assistant (Vaani)',
+    'voice.subtitle': 'Bilingual Voice Intelligence for Disaster Early Warning & Rapid Relief',
+    'voice.listening': 'Listening to your voice...',
+    'voice.speakNow': 'Tap Microphone & Speak',
+    'voice.stopListening': 'Stop Listening',
+    'voice.tryAsking': 'Try saying:',
+    'voice.helpText': 'Ask for evacuation routes, nearest shelters, landslide risk, weather, or to send SOS.',
 
     // Common
     'common.status': 'Status',
@@ -207,15 +220,28 @@ export const translations: Record<Language, Record<string, string>> = {
     'admin.broadcastAlert': 'बहु-माध्यम आपातकालीन चेतावनी प्रसारण',
     'admin.capacityOverride': 'बस्ती जनसंख्या एवं वहन क्षमता ओवरराइड',
 
-    // SOS & Police Modals
-    'sos.title': 'नागरिक आपातकालीन SOS बीकन',
+    // SOS & Police Combined Modals
+    'sos.title': 'एकीकृत आपातकालीन SOS एवं कमान केंद्र',
     'sos.name': 'आपका नाम',
     'sos.phone': 'संपर्क फोन नंबर',
     'sos.trappedCount': 'फंसे हुए व्यक्तियों की संख्या',
     'sos.medicalReq': 'चिकित्सा सहायता आवश्यक (एम्बुलेंस)',
     'sos.transmitBtn': 'नागरिक SOS बीकन प्रेषित करें',
+    'sos.tabCitizen': '🚨 नागरिक आपदा SOS',
+    'sos.tabPolice': '🚓 पुलिस स्टेशन SOS (PCR 112)',
+    'sos.tabResponder': '🛡️ राहत दल प्रसारण',
+    'sos.tabHelplines': '📞 24x7 हेल्पलाइन',
     'police.title': 'आपातकालीन सरकारी नंबर एवं पुलिस 112',
     'police.subtitle': 'पुलिस, एनडीआरएफ, एसडीआरएफ, आपदा नियंत्रण कक्ष और एम्बुलेंस के लिए वन-टैप कॉल सुविधा',
+
+    // Voice Assistant
+    'voice.title': 'दृष्टि एआई वॉयस असिस्टेंट (वाणी)',
+    'voice.subtitle': 'आपदा पूर्व चेतावनी एवं त्वरित राहत हेतु द्विभाषी वॉयस बुद्धिमत्ता',
+    'voice.listening': 'आपकी आवाज़ सुन रहे हैं...',
+    'voice.speakNow': 'माइक दबाएं और बोलें',
+    'voice.stopListening': 'सुनना बंद करें',
+    'voice.tryAsking': 'यह बोलकर देखें:',
+    'voice.helpText': 'निकासी मार्ग, निकटतम आश्रय, भूस्खलन जोखिम, मौसम या SOS भेजने के लिए बोलें।',
 
     // Common
     'common.status': 'स्थिति',

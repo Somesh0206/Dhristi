@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import SosModal from '@/components/SosModal';
 import EntryAuthModal from '@/components/EntryAuthModal';
 import PoliceEmergencyModal from '@/components/PoliceEmergencyModal';
+import VoiceAssistant from '@/components/VoiceAssistant';
 
 export const metadata: Metadata = {
   title: 'Dhristi - Smart Geo-Intelligence for Vulnerable Habitations',
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
     'Wayanad Landslides',
     'Flood Early Warning',
     'SOS Emergency',
+    'Voice Assistant',
   ],
   authors: [{ name: 'Dhristi Team' }],
 };
@@ -44,6 +46,7 @@ export default function RootLayout({
           <Footer />
           <SosModal />
           <PoliceEmergencyModal />
+          <VoiceAssistant />
           <EntryAuthModal />
         </AppProvider>
       </body>

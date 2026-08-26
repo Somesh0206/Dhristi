@@ -48,14 +48,20 @@ interface AppContextType {
   openPoliceModal: () => void;
   closePoliceModal: () => void;
 
+  // Voice Assistant (Bilingual Speech Recognition & Synthesis)
+  isVoiceAssistantOpen: boolean;
+  setIsVoiceAssistantOpen: (open: boolean) => void;
+  openVoiceAssistant: () => void;
+  closeVoiceAssistant: () => void;
+
   // Map Tile Provider (Google Maps / Apple Maps Esri / OSM)
   mapTileProvider: MapTileProvider;
   setMapTileProvider: (provider: MapTileProvider) => void;
 
-  // SOS Modal
+  // SOS Modal (Unified Citizen SOS, Police SOS, Responder Dispatch, Helplines)
   isSosModalOpen: boolean;
-  sosModalTab: 'citizen' | 'responder';
-  openSosModal: (tab?: 'citizen' | 'responder') => void;
+  sosModalTab: 'citizen' | 'police' | 'responder' | 'helplines';
+  openSosModal: (tab?: 'citizen' | 'police' | 'responder' | 'helplines') => void;
   closeSosModal: () => void;
 
   // SOS Alerts & Rescue Response
@@ -114,11 +120,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Police Emergency Hotlines State
   const [isPoliceModalOpen, setIsPoliceModalOpen] = useState<boolean>(false);
 
+  // Voice Assistant State
+  const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState<boolean>(false);
+
   // Map Tile Provider State
   const [mapTileProvider, setMapTileProvider] = useState<MapTileProvider>('google_hybrid');
 
   const [isSosModalOpen, setIsSosModalOpen] = useState<boolean>(false);
-  const [sosModalTab, setSosModalTab] = useState<'citizen' | 'responder'>('citizen');
+  const [sosModalTab, setSosModalTab] = useState<'citizen' | 'police' | 'responder' | 'helplines'>('citizen');
   const [sosAlerts, setSosAlerts] = useState<SosAlert[]>(initialCitizenSosBeacons);
   const [selectedSosForRoute, setSelectedSosForRoute] = useState<SosAlert | null>(initialCitizenSosBeacons[0]);
   const [incidentReports, setIncidentReports] = useState<IncidentReport[]>([]);
@@ -199,9 +208,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsAuthModalOpen(true);
   };
 
-  const openPoliceModal = () => setIsPoliceModalOpen(true);
-  const closePoliceModal = () => setIsPoliceModalOpen(false);
-
   // Fetch initial SOS alerts and Incidents from backend API
   const fetchBackendData = useCallback(async () => {
     try {
@@ -258,12 +264,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
   const toggleTelemetrySimulation = () => setIsLiveTelemetrySimulation((prev) => !prev);
 
-  const openSosModal = (tab: 'citizen' | 'responder' = 'citizen') => {
-    setSosModalTab(tab);
+  const openPoliceModal = () => {
+    setSosModalTab('police');
     setIsSosModalOpen(true);
+    setIsPoliceModalOpen(true);
+  };
+  const closePoliceModal = () => {
+    setIsPoliceModalOpen(false);
   };
 
-  const closeSosModal = () => setIsSosModalOpen(false);
+  const openVoiceAssistant = () => setIsVoiceAssistantOpen(true);
+  const closeVoiceAssistant = () => setIsVoiceAssistantOpen(false);
+
+  const openSosModal = (tab: 'citizen' | 'police' | 'responder' | 'helplines' = 'citizen') => {
+    setSosModalTab(tab);
+    setIsSosModalOpen(true);
+    if (tab === 'police') {
+      setIsPoliceModalOpen(true);
+    }
+  };
+
+  const closeSosModal = () => {
+    setIsSosModalOpen(false);
+    setIsPoliceModalOpen(false);
+  };
 
   const addSosAlert = async (alert: Omit<SosAlert, 'id' | 'timestamp' | 'status'>) => {
     try {
@@ -463,6 +487,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setIsPoliceModalOpen,
         openPoliceModal,
         closePoliceModal,
+        isVoiceAssistantOpen,
+        setIsVoiceAssistantOpen,
+        openVoiceAssistant,
+        closeVoiceAssistant,
         mapTileProvider,
         setMapTileProvider,
         isSosModalOpen,
