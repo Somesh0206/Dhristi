@@ -1,0 +1,8 @@
+# Dhristi AI Coding Constitution & Rules
+
+## System Invariants
+1. **Zero Data Loss**: Never mutate or purge live SOS records without explicit confirmation and status tracking (`PENDING` -> `DISPATCHED` -> `RESCUED`).
+2. **Safe Haven Categorization**: Safe shelters must strictly adhere to certified public facilities: Schools (`SCHOOL`), Hospitals (`HOSPITAL`), Stadiums (`STADIUM`), and Government Offices (`GOVT_OFFICE`).
+3. **Bilingual Parity**: Any added UI feature or modal must include corresponding translation keys in `src/i18n/translations.ts` for both English (`en`) and Hindi (`hi`).
+4. **Road Vector Accuracy**: Evacuation routes must follow real roadway networks computed via OSRM, rather than simplistic straight-line distance.
+5. **Universal SOS Unification**: Citizen distress broadcasts, Police PCR 112 dispatches, and National Helplines must remain unified under the central Emergency SOS Hub.
