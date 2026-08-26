@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import WeatherRadarWidget from '@/components/WeatherRadarWidget';
 import {
   mock50YearDisasters,
   mockPrediction7Days,
@@ -60,10 +61,13 @@ export default function PredictionsPage() {
             AI Predictions & Historical Disaster Analytics
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Multi-horizon machine learning risk projections grounded in 50-year EM-DAT disaster benchmarks.
+            Multi-horizon machine learning risk projections grounded in 50-year EM-DAT disaster benchmarks and live Open-Meteo satellite feeds.
           </p>
         </div>
       </div>
+
+      {/* Live Open-Meteo Weather & Soil Moisture Feed */}
+      <WeatherRadarWidget />
 
       {/* Section 1: ML Predictive Forecast Charts */}
       <div className="glass-panel p-6 rounded-2xl space-y-6">

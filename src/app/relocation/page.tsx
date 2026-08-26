@@ -62,6 +62,8 @@ function RelocationContent() {
   const [evacueeCount, setEvacueeCount] = useState<number>(1);
   const [evacuationMode, setEvacuationMode] = useState<'foot' | 'vehicle'>('vehicle');
   const [hasCompletedEvacuation, setHasCompletedEvacuation] = useState<boolean>(false);
+  const [resolvedAddress, setResolvedAddress] = useState<string>('Meppadi Hazard Zone, Wayanad');
+  const [routingSteps, setRoutingSteps] = useState<any[]>([]);
 
   // Pre-load from query param if passed
   useEffect(() => {
@@ -74,7 +76,7 @@ function RelocationContent() {
     }
   }, [habIdParam, setUserCoordinates]);
 
-  // Compute nearest shelter whenever user coordinates change
+  // Compute nearest shelter whenever user coordinates change & query OSRM + Nominatim
   useEffect(() => {
     let closest = mockShelters[0];
     let minDistance = Infinity;
@@ -94,6 +96,28 @@ function RelocationContent() {
 
     setNearestShelter(closest);
     setHasCompletedEvacuation(false);
+
+    // Live Reverse Geocode via Nominatim API
+    fetch(`/api/geocoding/reverse?lat=${userCoordinates[0]}&lon=${userCoordinates[1]}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.displayName) {
+          setResolvedAddress(data.displayName.split(',').slice(0, 3).join(','));
+        }
+      })
+      .catch(() => {});
+
+    // Live Routing via OSRM API
+    fetch(
+      `/api/routing/osrm?startLat=${userCoordinates[0]}&startLon=${userCoordinates[1]}&destLat=${closest.coordinates[0]}&destLon=${closest.coordinates[1]}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.steps && data.steps.length > 0) {
+          setRoutingSteps(data.steps);
+        }
+      })
+      .catch(() => {});
   }, [userCoordinates]);
 
   const distanceKm = calculateDistanceKm(
@@ -228,8 +252,8 @@ function RelocationContent() {
 
             <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
               <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800">
-                <div className="text-[10px] text-slate-400 font-sans">Start Elevation</div>
-                <div className="font-bold text-slate-900 dark:text-white">890m MSL</div>
+                <div className="text-[10px] text-slate-400 font-sans">Resolved Origin (OSM)</div>
+                <div className="font-bold text-slate-900 dark:text-white truncate">{resolvedAddress}</div>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800">
                 <div className="text-[10px] text-slate-400 font-sans">Shelter Elevation</div>
@@ -240,6 +264,34 @@ function RelocationContent() {
                 <div className="font-bold text-blue-500">8.4° (Vehicle Paved)</div>
               </div>
             </div>
+
+            {/* OSRM Turn-by-Turn Maneuvers */}
+            {routingSteps.length > 0 && (
+              <div className="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-2">
+                <div className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>OSRM Turn-by-Turn Safe Maneuvers:</span>
+                  <span className="text-[10px] font-mono text-slate-400">Avoids Inundated Lowlands</span>
+                </div>
+                <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                  {routingSteps.map((step, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs flex items-center justify-between text-slate-700 dark:text-slate-300"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-500 font-mono text-[10px] flex items-center justify-center font-bold">
+                          {idx + 1}
+                        </span>
+                        <span>{step.instruction}</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {step.distanceM > 1000 ? `${(step.distanceM / 1000).toFixed(1)} km` : `${step.distanceM} m`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Quick Simulation Presets */}

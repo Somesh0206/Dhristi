@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import LiveDisasterFeedsModal from './LiveDisasterFeedsModal';
 import {
   ShieldAlert,
   MapPin,
@@ -19,6 +20,7 @@ import {
   X,
   Volume2,
   VolumeX,
+  Globe2,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -34,6 +36,7 @@ export default function Navbar() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>('');
+  const [isDisasterModalOpen, setIsDisasterModalOpen] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -131,8 +134,18 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Actions: Theme Toggle, Siren, SOS Trigger */}
+          {/* Actions: USGS/NASA Feeds, Theme Toggle, Siren, SOS Trigger */}
           <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* USGS / NASA Live Feeds Trigger */}
+            <button
+              onClick={() => setIsDisasterModalOpen(true)}
+              className="hidden sm:flex items-center space-x-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold bg-purple-500/10 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 border border-purple-300 dark:border-purple-800/60 hover:bg-purple-500/20 transition-all"
+              title="USGS & NASA Live API Feeds"
+            >
+              <Globe2 className="w-3.5 h-3.5 text-purple-500 animate-spin-slow" />
+              <span>Live APIs</span>
+            </button>
+
             {/* Siren audio simulation toggle */}
             <button
               onClick={toggleEmergencySiren}
@@ -186,6 +199,16 @@ export default function Navbar() {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 pt-3 pb-6 space-y-2">
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              setIsDisasterModalOpen(true);
+            }}
+            className="w-full py-2 px-3 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-300 font-bold text-xs flex items-center justify-center space-x-2 border border-purple-500/20"
+          >
+            <Globe2 className="w-4 h-4" />
+            <span>Open USGS & NASA Live Feeds</span>
+          </button>
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -227,6 +250,12 @@ export default function Navbar() {
           </div>
         </div>
       )}
+
+      {/* Live Disaster Feeds Modal */}
+      <LiveDisasterFeedsModal
+        isOpen={isDisasterModalOpen}
+        onClose={() => setIsDisasterModalOpen(false)}
+      />
     </header>
   );
 }

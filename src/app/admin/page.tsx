@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { mockHabitations, mockHazardZones } from '@/data/zonesData';
 import { mockShelters } from '@/data/sheltersData';
+import PostgisQueryTester from '@/components/PostgisQueryTester';
 import {
   SlidersHorizontal,
   Radio,
@@ -326,6 +327,9 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
+      {/* Supabase / PostGIS Spatial SQL Query Console */}
+      <PostgisQueryTester />
     </div>
   );
 }
