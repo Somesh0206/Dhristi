@@ -4,10 +4,44 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { SosAlert, IncidentReport, HazardType, RiskLevel, SensorTelemetry } from '@/types';
 import confetti from 'canvas-confetti';
 
+export type UserRole = 'ADMIN' | 'STAFF' | 'CITIZEN';
+
+export interface UserSession {
+  name: string;
+  role: UserRole;
+  email?: string;
+  department?: string;
+  badgeNumber?: string;
+}
+
+export type MapTileProvider =
+  | 'google_hybrid'
+  | 'google_terrain'
+  | 'google_roadmap'
+  | 'esri_satellite'
+  | 'osm';
+
 interface AppContextType {
   // Theme
   isDarkMode: boolean;
   toggleTheme: () => void;
+
+  // Authentication & Role
+  currentUser: UserSession | null;
+  loginAs: (role: UserRole, name?: string, email?: string, department?: string) => void;
+  logout: () => void;
+  isAuthModalOpen: boolean;
+  setIsAuthModalOpen: (open: boolean) => void;
+
+  // Police Emergency & Hotlines Modal
+  isPoliceModalOpen: boolean;
+  setIsPoliceModalOpen: (open: boolean) => void;
+  openPoliceModal: () => void;
+  closePoliceModal: () => void;
+
+  // Map Tile Provider (Google Maps / Apple Maps Esri / OSM)
+  mapTileProvider: MapTileProvider;
+  setMapTileProvider: (provider: MapTileProvider) => void;
 
   // SOS Modal
   isSosModalOpen: boolean;
@@ -59,11 +93,22 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
+
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+
+  // Police Emergency Hotlines State
+  const [isPoliceModalOpen, setIsPoliceModalOpen] = useState<boolean>(false);
+
+  // Map Tile Provider State
+  const [mapTileProvider, setMapTileProvider] = useState<MapTileProvider>('google_hybrid');
+
   const [isSosModalOpen, setIsSosModalOpen] = useState<boolean>(false);
   const [sosModalTab, setSosModalTab] = useState<'citizen' | 'responder'>('citizen');
   const [sosAlerts, setSosAlerts] = useState<SosAlert[]>([]);
   const [incidentReports, setIncidentReports] = useState<IncidentReport[]>([]);
-  const [userCoordinates, setUserCoordinates] = useState<[number, number]>([11.5510, 76.1305]);
+  const [userCoordinates, setUserCoordinates] = useState<[number, number]>([11.551, 76.1305]);
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isSirenPlaying, setIsSirenPlaying] = useState<boolean>(false);
@@ -81,6 +126,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [selectedHazard, setSelectedHazard] = useState<HazardType | 'all'>('all');
   const [selectedRisk, setSelectedRisk] = useState<RiskLevel | 'all'>('all');
+
+  // Trigger login modal on initial site entry if not already logged in
+  useEffect(() => {
+    const savedUser = sessionStorage.getItem('dhristi_user');
+    if (savedUser) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch {
+        setIsAuthModalOpen(true);
+      }
+    } else {
+      // First visit: pop up the Admin/Staff login modal
+      setIsAuthModalOpen(true);
+    }
+  }, []);
+
+  const loginAs = (role: UserRole, name?: string, email?: string, department?: string) => {
+    const userObj: UserSession = {
+      name: name || (role === 'ADMIN' ? 'Dr. Rajesh Kumar (SEOC Director)' : role === 'STAFF' ? 'Capt. Ananya Iyer (NDRF Ops)' : 'Citizen Observer'),
+      role,
+      email: email || (role === 'ADMIN' ? 'admin.seoc@dhristi.gov.in' : role === 'STAFF' ? 'staff.ndrf@dhristi.gov.in' : 'citizen@dhristi.in'),
+      department: department || (role === 'ADMIN' ? 'State Emergency Operations Centre (SEOC)' : role === 'STAFF' ? 'NDRF 10th Battalion Relief Command' : 'General Public'),
+      badgeNumber: role !== 'CITIZEN' ? `IN-${Math.floor(1000 + Math.random() * 9000)}` : undefined,
+    };
+    setCurrentUser(userObj);
+    sessionStorage.setItem('dhristi_user', JSON.stringify(userObj));
+    setIsAuthModalOpen(false);
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+    sessionStorage.removeItem('dhristi_user');
+    setIsAuthModalOpen(true);
+  };
+
+  const openPoliceModal = () => setIsPoliceModalOpen(true);
+  const closePoliceModal = () => setIsPoliceModalOpen(false);
 
   // Fetch initial SOS alerts and Incidents from backend API
   const fetchBackendData = useCallback(async () => {
@@ -291,6 +373,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       value={{
         isDarkMode,
         toggleTheme,
+        currentUser,
+        loginAs,
+        logout,
+        isAuthModalOpen,
+        setIsAuthModalOpen,
+        isPoliceModalOpen,
+        setIsPoliceModalOpen,
+        openPoliceModal,
+        closePoliceModal,
+        mapTileProvider,
+        setMapTileProvider,
         isSosModalOpen,
         sosModalTab,
         openSosModal,

@@ -4,6 +4,8 @@ import { AppProvider } from '@/context/AppContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SosModal from '@/components/SosModal';
+import EntryAuthModal from '@/components/EntryAuthModal';
+import PoliceEmergencyModal from '@/components/PoliceEmergencyModal';
 
 export const metadata: Metadata = {
   title: 'Dhristi - Smart Geo-Intelligence for Vulnerable Habitations',
@@ -41,6 +43,8 @@ export default function RootLayout({
           <main className="flex-1 w-full">{children}</main>
           <Footer />
           <SosModal />
+          <PoliceEmergencyModal />
+          <EntryAuthModal />
         </AppProvider>
       </body>
     </html>

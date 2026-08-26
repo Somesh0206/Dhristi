@@ -21,6 +21,12 @@ import {
   Volume2,
   VolumeX,
   Globe2,
+  Siren,
+  User,
+  ShieldCheck,
+  UserCheck,
+  Eye,
+  LogOut,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -32,6 +38,10 @@ export default function Navbar() {
     isSirenPlaying,
     toggleEmergencySiren,
     activeAlertCount,
+    openPoliceModal,
+    currentUser,
+    setIsAuthModalOpen,
+    logout,
   } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -64,6 +74,20 @@ export default function Navbar() {
     { href: '/admin', label: 'Command Center', icon: SlidersHorizontal },
     { href: '/resources', label: 'Awareness & SOPs', icon: BookOpen },
   ];
+
+  const roleLabel =
+    currentUser?.role === 'ADMIN'
+      ? 'SEOC Admin'
+      : currentUser?.role === 'STAFF'
+      ? 'NDRF Staff'
+      : 'Citizen Guest';
+
+  const roleBadgeColor =
+    currentUser?.role === 'ADMIN'
+      ? 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30'
+      : currentUser?.role === 'STAFF'
+      ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30'
+      : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md transition-colors">
@@ -134,12 +158,38 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Actions: USGS/NASA Feeds, Theme Toggle, Siren, SOS Trigger */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          {/* Actions: Police SOS, Auth Badge, USGS/NASA Feeds, Theme Toggle, Siren, SOS Trigger */}
+          <div className="flex items-center space-x-2 sm:space-x-2.5">
+            {/* Police SOS Button */}
+            <button
+              onClick={openPoliceModal}
+              className="flex items-center space-x-1.5 px-2.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 transition-all hover:scale-105"
+              title="Dispatch SOS to Nearest Police Station & Government Numbers"
+            >
+              <Siren className="w-3.5 h-3.5 animate-bounce" />
+              <span className="hidden sm:inline">Police SOS</span>
+            </button>
+
+            {/* Auth / Role Indicator */}
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className={`hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border ${roleBadgeColor} hover:opacity-80 transition-all`}
+              title="Switch Clearance Role (Admin / Staff / Citizen)"
+            >
+              {currentUser?.role === 'ADMIN' ? (
+                <ShieldCheck className="w-3.5 h-3.5 text-red-500" />
+              ) : currentUser?.role === 'STAFF' ? (
+                <UserCheck className="w-3.5 h-3.5 text-blue-500" />
+              ) : (
+                <Eye className="w-3.5 h-3.5 text-emerald-500" />
+              )}
+              <span>{roleLabel}</span>
+            </button>
+
             {/* USGS / NASA Live Feeds Trigger */}
             <button
               onClick={() => setIsDisasterModalOpen(true)}
-              className="hidden sm:flex items-center space-x-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold bg-purple-500/10 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 border border-purple-300 dark:border-purple-800/60 hover:bg-purple-500/20 transition-all"
+              className="hidden xl:flex items-center space-x-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold bg-purple-500/10 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 border border-purple-300 dark:border-purple-800/60 hover:bg-purple-500/20 transition-all"
               title="USGS & NASA Live API Feeds"
             >
               <Globe2 className="w-3.5 h-3.5 text-purple-500 animate-spin-slow" />
@@ -171,13 +221,13 @@ export default function Navbar() {
             {/* Red Floating Emergency Button */}
             <button
               onClick={() => openSosModal('citizen')}
-              className="relative group flex items-center space-x-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-red-600/30 transition-all hover:scale-105 active:scale-95"
+              className="relative group flex items-center space-x-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-red-600/30 transition-all hover:scale-105 active:scale-95"
             >
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
               </span>
-              <span className="tracking-wide">SOS EMERGENCY</span>
+              <span className="tracking-wide">SOS</span>
               {activeAlertCount > 0 && (
                 <span className="bg-red-950 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                   {activeAlertCount}
@@ -199,6 +249,30 @@ export default function Navbar() {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 pt-3 pb-6 space-y-2">
+          {/* Mobile Auth Role & Police Action */}
+          <div className="grid grid-cols-2 gap-2 pb-2">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setIsAuthModalOpen(true);
+              }}
+              className={`py-2 px-3 rounded-xl border ${roleBadgeColor} font-bold text-xs flex items-center justify-center space-x-1`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Role: {roleLabel}</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                openPoliceModal();
+              }}
+              className="py-2 px-3 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center space-x-1"
+            >
+              <Siren className="w-3.5 h-3.5" />
+              <span>Police SOS</span>
+            </button>
+          </div>
+
           <button
             onClick={() => {
               setMobileMenuOpen(false);
@@ -259,3 +333,4 @@ export default function Navbar() {
     </header>
   );
 }
+

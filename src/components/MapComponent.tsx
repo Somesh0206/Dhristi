@@ -5,6 +5,8 @@ import { MapContainer, TileLayer, Marker, Popup, Polygon, Polyline, Circle, useM
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { Habitation, HazardZone, Shelter } from '@/types';
+import { useApp, MapTileProvider } from '@/context/AppContext';
+import { Globe2, Navigation, Layers, ExternalLink } from 'lucide-react';
 
 // Custom Map Marker Icons using HTML SVGs
 function createCustomIcon(color: string, label: string, isPulsing = false) {
@@ -42,6 +44,34 @@ function MapController({ center, zoom }: { center: [number, number]; zoom: numbe
   return null;
 }
 
+const tileProviders: Record<MapTileProvider, { name: string; url: string; attribution: string }> = {
+  google_hybrid: {
+    name: 'Google Maps (Satellite Hybrid)',
+    url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps Imagery',
+  },
+  google_terrain: {
+    name: 'Google Maps (3D Terrain)',
+    url: 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps Terrain',
+  },
+  google_roadmap: {
+    name: 'Google Maps (Roadmap)',
+    url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps Roadmap',
+  },
+  esri_satellite: {
+    name: 'Apple / Esri World Satellite',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri & Apple Maps GIS Community',
+  },
+  osm: {
+    name: 'OpenStreetMap Carto',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; OpenStreetMap & CARTO',
+  },
+};
+
 interface MapComponentProps {
   center: [number, number];
   zoom?: number;
@@ -69,8 +99,30 @@ export default function MapComponent({
   onSelectShelter,
   height = '500px',
 }: MapComponentProps) {
+  const { mapTileProvider, setMapTileProvider } = useApp();
+  const currentTile = tileProviders[mapTileProvider] || tileProviders.google_hybrid;
+
   return (
-    <div style={{ height, width: '100%' }} className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800">
+    <div
+      style={{ height, width: '100%' }}
+      className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 group"
+    >
+      {/* Floating Map Tile Provider Selector (Google Maps / Apple Maps / OSM) */}
+      <div className="absolute top-3 right-3 z-[1000] bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-700 shadow-2xl flex items-center space-x-1 text-xs">
+        <Layers className="w-3.5 h-3.5 text-blue-400 ml-1 mr-0.5" />
+        <select
+          value={mapTileProvider}
+          onChange={(e) => setMapTileProvider(e.target.value as MapTileProvider)}
+          className="bg-slate-800 text-slate-100 font-bold text-[11px] py-1 px-2 rounded-lg border border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+        >
+          <option value="google_hybrid">🛰️ Google Maps (Hybrid)</option>
+          <option value="google_terrain">⛰️ Google Maps (Terrain)</option>
+          <option value="google_roadmap">🗺️ Google Maps (Roadmap)</option>
+          <option value="esri_satellite">🍏 Apple / Esri Satellite</option>
+          <option value="osm">🌐 OpenStreetMap</option>
+        </select>
+      </div>
+
       <MapContainer
         center={center}
         zoom={zoom}
@@ -79,10 +131,12 @@ export default function MapComponent({
       >
         <MapController center={center} zoom={zoom} />
 
-        {/* Base Map Tiles (OpenStreetMap Carto Voyager style / standard) */}
+        {/* Dynamic Multi-Provider Tile Layer */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          key={mapTileProvider}
+          attribution={currentTile.attribution}
+          url={currentTile.url}
+          maxZoom={19}
         />
 
         {/* Hazard Zone Polygons */}
@@ -107,7 +161,7 @@ export default function MapComponent({
               }}
             >
               <Popup>
-                <div className="p-1 space-y-1 text-slate-100">
+                <div className="p-1 space-y-1.5 text-slate-100 min-w-[200px]">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-bold text-xs">{zone.name}</span>
                     <span
@@ -128,6 +182,28 @@ export default function MapComponent({
                   </div>
                   <div className="text-[10px] text-amber-300 font-medium">
                     Trigger: {zone.triggerCondition}
+                  </div>
+
+                  {/* Deep link to Google & Apple Maps */}
+                  <div className="border-t border-slate-700/80 pt-1.5 flex gap-1 text-[10px]">
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${zone.center[0]},${zone.center[1]}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-1 px-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-center font-bold flex items-center justify-center space-x-1"
+                    >
+                      <span>Google Maps</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                    <a
+                      href={`https://maps.apple.com/?q=${zone.name}&ll=${zone.center[0]},${zone.center[1]}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-1 px-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-center font-bold flex items-center justify-center space-x-1"
+                    >
+                      <span>Apple Maps</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
                   </div>
                 </div>
               </Popup>
@@ -192,6 +268,28 @@ export default function MapComponent({
                         ⚠️ Immediate Relocation Mandated
                       </div>
                     )}
+
+                    {/* External Navigation Links */}
+                    <div className="border-t border-slate-700/80 pt-1.5 flex gap-1 text-[10px]">
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${hab.coordinates[0]},${hab.coordinates[1]}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-1 px-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-center font-bold flex items-center justify-center space-x-1"
+                      >
+                        <span>Google Nav</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                      <a
+                        href={`https://maps.apple.com/?daddr=${hab.coordinates[0]},${hab.coordinates[1]}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-1 px-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-center font-bold flex items-center justify-center space-x-1"
+                      >
+                        <span>Apple Nav</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
                   </div>
                 </Popup>
               </Marker>
@@ -235,6 +333,28 @@ export default function MapComponent({
                   </div>
                   <div className="text-[10px] text-slate-400">
                     Contact: {shelter.contactPerson} ({shelter.phone})
+                  </div>
+
+                  {/* External Navigation Links */}
+                  <div className="border-t border-slate-700/80 pt-1.5 flex gap-1 text-[10px]">
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${shelter.coordinates[0]},${shelter.coordinates[1]}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-1 px-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-center font-bold flex items-center justify-center space-x-1"
+                    >
+                      <span>Google Nav</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                    <a
+                      href={`https://maps.apple.com/?daddr=${shelter.coordinates[0]},${shelter.coordinates[1]}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-1 px-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-center font-bold flex items-center justify-center space-x-1"
+                    >
+                      <span>Apple Nav</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
                   </div>
                 </div>
               </Popup>
