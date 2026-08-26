@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import MapWrapper from '@/components/MapWrapper';
 import { mockShelters } from '@/data/sheltersData';
 import { Shelter } from '@/types';
+import { useApp } from '@/context/AppContext';
 import {
   Building2,
   Search,
@@ -22,6 +23,7 @@ import {
 import Link from 'next/link';
 
 export default function SheltersPage() {
+  const { language, t } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('ALL');
   const [selectedShelter, setSelectedShelter] = useState<Shelter>(mockShelters[0]);
@@ -42,13 +44,16 @@ export default function SheltersPage() {
         <div>
           <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-xs font-bold uppercase tracking-wider mb-2">
             <Building2 className="w-3.5 h-3.5" />
-            <span>Evacuation Infrastructure & Resilience Index</span>
+            <span>{language === 'hi' ? 'सुरक्षित आश्रय अवसंरचना एवं वहन क्षमता' : 'Evacuation Infrastructure & Resilience Index'}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-            Global Safe Shelter Database
+            {t('shelters.title', 'Safe Shelters & Relief Camps')}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Real-time live occupancy, emergency relief stock levels, and 50-year structural resilience scorecards.
+            {t(
+              'shelters.subtitle',
+              'Carrying capacity tracking, real-time occupancy, and 50-year structural resilience across verified safe havens.'
+            )}
           </p>
         </div>
       </div>
@@ -60,7 +65,11 @@ export default function SheltersPage() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search by shelter name, district, or address..."
+            placeholder={
+              language === 'hi'
+                ? 'आश्रय स्थल का नाम, ज़िला या पता खोजें...'
+                : 'Search by shelter name, district, or address...'
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
@@ -69,13 +78,13 @@ export default function SheltersPage() {
 
         {/* Shelter Type Filter */}
         <div className="flex items-center space-x-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 text-xs">
-          <span className="font-bold text-slate-400 shrink-0">Category:</span>
+          <span className="font-bold text-slate-400 shrink-0">{language === 'hi' ? 'श्रेणी:' : 'Category:'}</span>
           {[
-            { id: 'ALL', label: 'All Shelters' },
-            { id: 'SCHOOL', label: '🏫 Schools' },
-            { id: 'HOSPITAL', label: '🏥 Hospitals' },
-            { id: 'STADIUM', label: '🏟️ Stadiums' },
-            { id: 'GOVERNMENT_OFFICE', label: '🏛️ Govt Offices' },
+            { id: 'ALL', label: t('shelters.filterAll', 'All Shelters') },
+            { id: 'SCHOOL', label: t('shelters.filterSchool', '🏫 Schools') },
+            { id: 'HOSPITAL', label: t('shelters.filterHospital', '🏥 Hospitals') },
+            { id: 'STADIUM', label: t('shelters.filterStadium', '🏟️ Stadiums') },
+            { id: 'GOVERNMENT_OFFICE', label: t('shelters.filterGovt', '🏛️ Govt Offices') },
           ].map((cat) => (
             <button
               key={cat.id}
@@ -136,7 +145,9 @@ export default function SheltersPage() {
             {/* Live Occupancy Matrix */}
             <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl space-y-2">
               <div className="flex justify-between items-center text-xs font-semibold">
-                <span className="text-slate-600 dark:text-slate-300">Live Occupancy Status</span>
+                <span className="text-slate-600 dark:text-slate-300">
+                  {language === 'hi' ? 'लाइव अधिभोग स्थिति' : 'Live Occupancy Status'}
+                </span>
                 <span className="font-mono font-bold text-slate-900 dark:text-white">
                   {selectedShelter.currentOccupancy} / {selectedShelter.totalCapacity} (
                   {Math.round((selectedShelter.currentOccupancy / selectedShelter.totalCapacity) * 100)}%)
@@ -158,21 +169,26 @@ export default function SheltersPage() {
                 ></div>
               </div>
               <div className="flex justify-between text-[10px] text-slate-400 pt-1">
-                <span>Buffer Remaining: {selectedShelter.totalCapacity - selectedShelter.currentOccupancy}</span>
-                <span>District: {selectedShelter.district}</span>
+                <span>
+                  {language === 'hi' ? 'शेष क्षमता स्थान:' : 'Buffer Remaining:'}{' '}
+                  {selectedShelter.totalCapacity - selectedShelter.currentOccupancy}
+                </span>
+                <span>{language === 'hi' ? 'ज़िला:' : 'District:'} {selectedShelter.district}</span>
               </div>
             </div>
 
             {/* Emergency Supplies Grid */}
             <div>
               <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2">
-                Emergency Relief Supplies on Hand:
+                {language === 'hi' ? 'उपलब्ध आपातकालीन राहत सामग्री:' : 'Emergency Relief Supplies on Hand:'}
               </h4>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center space-x-2.5">
                   <Droplet className="w-4 h-4 text-blue-500 shrink-0" />
                   <div>
-                    <div className="text-[10px] text-slate-400">Potable Water</div>
+                    <div className="text-[10px] text-slate-400">
+                      {language === 'hi' ? 'पेयजल भंडार' : 'Potable Water'}
+                    </div>
                     <div className="font-bold text-slate-900 dark:text-white">
                       {selectedShelter.supplies.waterLiters.toLocaleString()} L ({selectedShelter.supplies.waterDays}d)
                     </div>
@@ -182,9 +198,11 @@ export default function SheltersPage() {
                 <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center space-x-2.5">
                   <Utensils className="w-4 h-4 text-amber-500 shrink-0" />
                   <div>
-                    <div className="text-[10px] text-slate-400">Dry Food Rations</div>
+                    <div className="text-[10px] text-slate-400">
+                      {language === 'hi' ? 'खाद्य राशन' : 'Dry Food Rations'}
+                    </div>
                     <div className="font-bold text-slate-900 dark:text-white">
-                      {selectedShelter.supplies.foodRationDays} Days Reserve
+                      {selectedShelter.supplies.foodRationDays} {language === 'hi' ? 'दिनों का भंडार' : 'Days Reserve'}
                     </div>
                   </div>
                 </div>
@@ -192,9 +210,11 @@ export default function SheltersPage() {
                 <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center space-x-2.5">
                   <Zap className="w-4 h-4 text-yellow-500 shrink-0" />
                   <div>
-                    <div className="text-[10px] text-slate-400">Aux Genset Power</div>
+                    <div className="text-[10px] text-slate-400">
+                      {language === 'hi' ? 'डीजल जनरेटर बैकअप' : 'Aux Genset Power'}
+                    </div>
                     <div className="font-bold text-slate-900 dark:text-white">
-                      {selectedShelter.supplies.dieselGenHours} hrs Fuel
+                      {selectedShelter.supplies.dieselGenHours} {language === 'hi' ? 'घंटे ईंधन' : 'hrs Fuel'}
                     </div>
                   </div>
                 </div>
@@ -202,9 +222,11 @@ export default function SheltersPage() {
                 <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center space-x-2.5">
                   <HeartPulse className="w-4 h-4 text-rose-500 shrink-0" />
                   <div>
-                    <div className="text-[10px] text-slate-400">Medical Trauma Kits</div>
+                    <div className="text-[10px] text-slate-400">
+                      {language === 'hi' ? 'चिकित्सा किट' : 'Medical Trauma Kits'}
+                    </div>
                     <div className="font-bold text-slate-900 dark:text-white">
-                      {selectedShelter.supplies.medicalKits} Sealed Kits
+                      {selectedShelter.supplies.medicalKits} {language === 'hi' ? 'सील किट' : 'Sealed Kits'}
                     </div>
                   </div>
                 </div>
@@ -214,19 +236,33 @@ export default function SheltersPage() {
             {/* 50-Year Historical Disaster Withstand Specs */}
             <div className="border-t border-slate-200 dark:border-slate-800 pt-3">
               <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2">
-                50-Year Disaster Withstand Audit:
+                {language === 'hi' ? '50-वर्षीय आपदा सहनशीलता ऑडिट:' : '50-Year Disaster Withstand Audit:'}
               </h4>
               <div className="grid grid-cols-2 gap-1.5 text-[11px] bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl text-slate-600 dark:text-slate-300">
-                <div>Flood Tolerance: <strong className="text-blue-500">{selectedShelter.historicalWithstand.floodLevelM}m</strong></div>
-                <div>Seismic Tolerance: <strong className="text-purple-500">{selectedShelter.historicalWithstand.earthquakeRichter} M</strong></div>
-                <div>Wind Speed Tolerance: <strong className="text-amber-500">{selectedShelter.historicalWithstand.cycloneWindKmph} km/h</strong></div>
-                <div>Past Survived Disasters: <strong className="text-emerald-500">{selectedShelter.historicalWithstand.pastIncidentsSurvived}</strong></div>
+                <div>
+                  {language === 'hi' ? 'बाढ़ सहनशीलता:' : 'Flood Tolerance:'}{' '}
+                  <strong className="text-blue-500">{selectedShelter.historicalWithstand.floodLevelM}m</strong>
+                </div>
+                <div>
+                  {language === 'hi' ? 'भूकंप सहनशीलता:' : 'Seismic Tolerance:'}{' '}
+                  <strong className="text-purple-500">{selectedShelter.historicalWithstand.earthquakeRichter} M</strong>
+                </div>
+                <div>
+                  {language === 'hi' ? 'हवा की गति सहन:' : 'Wind Speed:'}{' '}
+                  <strong className="text-amber-500">{selectedShelter.historicalWithstand.cycloneWindKmph} km/h</strong>
+                </div>
+                <div>
+                  {language === 'hi' ? 'पूर्व आपदाएं झेलीं:' : 'Past Incidents:'}{' '}
+                  <strong className="text-emerald-500">{selectedShelter.historicalWithstand.pastIncidentsSurvived}</strong>
+                </div>
               </div>
             </div>
 
             {/* Facilities List */}
             <div>
-              <div className="text-xs font-bold text-slate-900 dark:text-white mb-1.5">Specialized Amenities:</div>
+              <div className="text-xs font-bold text-slate-900 dark:text-white mb-1.5">
+                {language === 'hi' ? 'विशिष्ट सुविधाएं:' : 'Specialized Amenities:'}
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {selectedShelter.facilities.map((fac, i) => (
                   <span
@@ -252,7 +288,7 @@ export default function SheltersPage() {
                 href={`tel:${selectedShelter.phone.replace(/[^0-9+]/g, '')}`}
                 className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold"
               >
-                Call Desk
+                {language === 'hi' ? 'कॉल डेस्क' : 'Call Desk'}
               </a>
             </div>
           </div>
@@ -262,7 +298,7 @@ export default function SheltersPage() {
       {/* Directory Grid */}
       <div className="space-y-4">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-          Complete Safe Shelter Directory ({filteredShelters.length})
+          {language === 'hi' ? 'संपूर्ण सुरक्षित आश्रय निर्देशिका' : 'Complete Safe Shelter Directory'} ({filteredShelters.length})
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredShelters.map((shelter) => (
@@ -279,18 +315,18 @@ export default function SheltersPage() {
                 <span className="text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded flex items-center space-x-1">
                   <span>
                     {shelter.type === 'SCHOOL'
-                      ? '🏫 School'
+                      ? language === 'hi' ? '🏫 स्कूल' : '🏫 School'
                       : shelter.type === 'HOSPITAL'
-                      ? '🏥 Hospital'
+                      ? language === 'hi' ? '🏥 अस्पताल' : '🏥 Hospital'
                       : shelter.type === 'STADIUM'
-                      ? '🏟️ Stadium'
+                      ? language === 'hi' ? '🏟️ स्टेडियम' : '🏟️ Stadium'
                       : shelter.type === 'GOVERNMENT_OFFICE'
-                      ? '🏛️ Govt Office'
+                      ? language === 'hi' ? '🏛️ सरकारी कार्यालय' : '🏛️ Govt Office'
                       : '🏢 Safe Haven'}
                   </span>
                 </span>
                 <span className="text-xs font-mono font-black text-emerald-500">
-                  Resilience: {shelter.resilienceScore}/100
+                  {language === 'hi' ? 'सुरक्षा स्कोर:' : 'Resilience:'} {shelter.resilienceScore}/100
                 </span>
               </div>
               <h4 className="text-base font-bold text-slate-900 dark:text-white">{shelter.name}</h4>
@@ -298,11 +334,15 @@ export default function SheltersPage() {
 
               <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-slate-400 block text-[10px]">Capacity</span>
+                  <span className="text-slate-400 block text-[10px]">
+                    {language === 'hi' ? 'कुल क्षमता' : 'Capacity'}
+                  </span>
                   <span className="font-bold">{shelter.totalCapacity.toLocaleString()}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">Occupancy</span>
+                  <span className="text-slate-400 block text-[10px]">
+                    {language === 'hi' ? 'अधिभोग' : 'Occupancy'}
+                  </span>
                   <span className="font-bold text-blue-500">
                     {shelter.currentOccupancy} ({Math.round((shelter.currentOccupancy / shelter.totalCapacity) * 100)}%)
                   </span>
