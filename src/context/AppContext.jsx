@@ -403,28 +403,47 @@ export function AppProvider({ children }) {
     );
   };
 
-  const requestUserLocation = async () => {
-    setIsLocating(true);
-    setLocationError(null);
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by your browser.');
-      setIsLocating(false);
-      return;
-    }
+  const requestUserLocation = useCallback(() => {
+    return new Promise((resolve) => {
+      setIsLocating(true);
+      setLocationError(null);
+      if (typeof window === 'undefined' || !navigator.geolocation) {
+        setLocationError('Geolocation is not supported by your browser.');
+        setIsLocating(false);
+        resolve(userCoordinates);
+        return;
+      }
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserCoordinates([pos.coords.latitude, pos.coords.longitude]);
-        setIsLocating(false);
-      },
-      (err) => {
-        console.warn('Geolocation error:', err.message);
-        setLocationError(`Could not access GPS (${err.message}). Using Wayanad regional coordinates.`);
-        setIsLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
-  };
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const coords = [pos.coords.latitude, pos.coords.longitude];
+          setUserCoordinates(coords);
+          setIsLocating(false);
+          resolve(coords);
+        },
+        (err) => {
+          console.warn('Geolocation notice:', err.message);
+          setLocationError(`Could not acquire device GPS (${err.message}). Using regional coordinates.`);
+          setIsLocating(false);
+          resolve(userCoordinates);
+        },
+        { enableHighAccuracy: true, timeout: 7000, maximumAge: 60000 }
+      );
+    });
+  }, [userCoordinates]);
+
+  // Auto-acquire device location on client mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserCoordinates([pos.coords.latitude, pos.coords.longitude]);
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 6000, maximumAge: 120000 }
+      );
+    }
+  }, []);
 
   const playSosBeep = () => {
     try {

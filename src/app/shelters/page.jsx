@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 export default function SheltersPage() {
-  const { language, userCoordinates, t } = useApp();
+  const { language, userCoordinates, requestUserLocation, t } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('ALL');
   const [selectedState, setSelectedState] = useState('ALL');
@@ -60,9 +60,21 @@ export default function SheltersPage() {
       category: 'SHELTER'
     });
 
+    let originCoords = userCoordinates;
+    if (requestUserLocation) {
+      try {
+        const fresh = await requestUserLocation();
+        if (fresh && Array.isArray(fresh) && fresh.length === 2) {
+          originCoords = fresh;
+        }
+      } catch {
+        // fallback
+      }
+    }
+
     try {
       const res = await fetch(
-        `/api/routing/osrm?startLat=${userCoordinates[0]}&startLon=${userCoordinates[1]}&destLat=${shelter.coordinates[0]}&destLon=${shelter.coordinates[1]}`
+        `/api/routing/osrm?startLat=${originCoords[0]}&startLon=${originCoords[1]}&destLat=${shelter.coordinates[0]}&destLon=${shelter.coordinates[1]}`
       );
       const data = await res.json();
       setActiveRouteInfo({
@@ -78,8 +90,8 @@ export default function SheltersPage() {
         walkingTimeFormatted: data.walkingTimeFormatted,
         routeCoordinates: data.coordinates,
         steps: data.steps || [],
-        originCoordinates: userCoordinates,
-        originLabel: language === 'hi' ? 'आपका वर्तमान स्थान' : 'Your GPS Location'
+        originCoordinates: originCoords,
+        originLabel: language === 'hi' ? 'आपका वर्तमान जीपीएस स्थान' : 'Your GPS Location'
       });
     } catch (e) {
       console.warn('Shelter route calc failed:', e);

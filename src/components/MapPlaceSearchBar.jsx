@@ -28,8 +28,7 @@ export default function MapPlaceSearchBar({
   originLabel,
   className = ''
 }) {
-  const { userCoordinates, language } = useApp();
-  const startCoords = originCoordinates || userCoordinates;
+  const { userCoordinates, requestUserLocation, language } = useApp();
 
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -90,6 +89,18 @@ export default function MapPlaceSearchBar({
     setQuery(place.name);
     setIsRouting(true);
 
+    let startCoords = originCoordinates || userCoordinates;
+    if (!originCoordinates && requestUserLocation) {
+      try {
+        const freshCoords = await requestUserLocation();
+        if (freshCoords && Array.isArray(freshCoords) && freshCoords.length === 2) {
+          startCoords = freshCoords;
+        }
+      } catch {
+        // use fallback userCoordinates
+      }
+    }
+
     const destCoords = place.coordinates;
 
     try {
@@ -112,7 +123,7 @@ export default function MapPlaceSearchBar({
         routeCoordinates: data.coordinates,
         steps: data.steps || [],
         originCoordinates: startCoords,
-        originLabel: originLabel || (language === 'hi' ? 'आपका वर्तमान स्थान' : 'Your Current Position')
+        originLabel: originLabel || (language === 'hi' ? 'आपका वर्तमान जीपीएस स्थान' : 'Your Present GPS Location')
       };
 
       setActiveRoute(routeInfo);

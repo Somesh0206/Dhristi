@@ -89,20 +89,23 @@ export default function SosModal() {
     radioBroadcast: true
   });
 
-  // Fetch nearest police stations based on user coordinates
+  // Auto-acquire device GPS and fetch nearest police stations when SOS modal opens
   useEffect(() => {
     if (isSosModalOpen) {
-      fetch(`/api/police/stations?lat=${userCoordinates[0]}&lon=${userCoordinates[1]}`).
-      then((res) => res.json()).
-      then((data) => {
-        if (data.stations && data.stations.length > 0) {
-          setPoliceStations(data.stations);
-          setSelectedStation(data.nearestStation || data.stations[0]);
-        }
-      }).
-      catch(() => {});
+      if (requestUserLocation) {
+        requestUserLocation();
+      }
+      fetch(`/api/police/stations?lat=${userCoordinates[0]}&lon=${userCoordinates[1]}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.stations && data.stations.length > 0) {
+            setPoliceStations(data.stations);
+            setSelectedStation(data.nearestStation || data.stations[0]);
+          }
+        })
+        .catch(() => {});
     }
-  }, [isSosModalOpen, userCoordinates]);
+  }, [isSosModalOpen, userCoordinates, requestUserLocation]);
 
   if (!isSosModalOpen) return null;
 

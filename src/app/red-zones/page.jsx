@@ -15,12 +15,13 @@ import {
   Compass,
   ArrowRight,
   Navigation,
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function RedZonesPage() {
-  const { language, userCoordinates, t } = useApp();
+  const { language, userCoordinates, requestUserLocation, t } = useApp();
   const [selectedHazard, setSelectedHazard] = useState('all');
   const [selectedRisk, setSelectedRisk] = useState('all');
   const [selectedHabitation, setSelectedHabitation] = useState(mockHabitations[0]);
@@ -30,6 +31,57 @@ export default function RedZonesPage() {
   // Place Search and Road Route State
   const [searchedPlace, setSearchedPlace] = useState(null);
   const [activeRouteInfo, setActiveRouteInfo] = useState(null);
+  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
+
+  const handleShowRoadRouteToHabitation = async (hab) => {
+    if (!hab) return;
+    setIsCalculatingRoute(true);
+    try {
+      let originCoords = userCoordinates;
+      if (requestUserLocation) {
+        const freshCoords = await requestUserLocation();
+        if (freshCoords && Array.isArray(freshCoords) && freshCoords.length === 2) {
+          originCoords = freshCoords;
+        }
+      }
+
+      const res = await fetch(
+        `/api/routing/osrm?startLat=${originCoords[0]}&startLon=${originCoords[1]}&destLat=${hab.coordinates[0]}&destLon=${hab.coordinates[1]}`
+      );
+      const data = await res.json();
+
+      const routeInfo = {
+        destinationName: hab.name,
+        destinationAddress: `${hab.name}, ${hab.district}, ${hab.state}`,
+        destinationCoordinates: hab.coordinates,
+        category: 'HABITATION',
+        state: hab.state,
+        distanceKm: data.distanceKm || 0,
+        durationMins: data.durationMins || 0,
+        walkingDurationMins: data.walkingDurationMins || 0,
+        vehicleTimeFormatted: data.vehicleTimeFormatted || `${data.durationMins || 0}m`,
+        walkingTimeFormatted: data.walkingTimeFormatted || `${data.walkingDurationMins || 0}m`,
+        routeCoordinates: data.coordinates || [originCoords, hab.coordinates],
+        steps: data.steps || [],
+        originCoordinates: originCoords,
+        originLabel: language === 'hi' ? 'आपका वर्तमान जीपीएस स्थान' : 'Your Present GPS Location'
+      };
+
+      setSearchedPlace({
+        name: hab.name,
+        displayName: `${hab.name}, ${hab.district}, ${hab.state}`,
+        coordinates: hab.coordinates,
+        category: 'HABITATION'
+      });
+      setActiveRouteInfo(routeInfo);
+      setMapCenter(hab.coordinates);
+      setZoomLevel(11);
+    } catch (err) {
+      console.error('Failed to calculate road route to habitation:', err);
+    } finally {
+      setIsCalculatingRoute(false);
+    }
+  };
 
   // Filter logic
   const filteredZones = mockHazardZones.filter((zone) => {
@@ -400,20 +452,20 @@ export default function RedZonesPage() {
               {/* Navigation Action Buttons */}
               <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex gap-2">
                 <button
-                  onClick={() =>
-                    handleRouteCalculated({
-                      destinationName: selectedHabitation.name,
-                      destinationAddress: `${selectedHabitation.name}, ${selectedHabitation.district}, ${selectedHabitation.state}`,
-                      destinationCoordinates: selectedHabitation.coordinates,
-                      category: 'HABITATION',
-                      distanceKm: 0,
-                      durationMins: 0
-                    })
-                  }
-                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold text-center flex items-center justify-center space-x-1 shadow-md shadow-blue-600/20"
+                  onClick={() => handleShowRoadRouteToHabitation(selectedHabitation)}
+                  disabled={isCalculatingRoute}
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl text-xs font-bold text-center flex items-center justify-center space-x-1.5 shadow-md shadow-blue-600/20 transition-all"
                 >
-                  <Navigation className="w-3.5 h-3.5" />
-                  <span>{language === 'hi' ? 'सड़क मार्ग देखें' : 'Show Road Route'}</span>
+                  {isCalculatingRoute ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Navigation className="w-3.5 h-3.5" />
+                  )}
+                  <span>
+                    {isCalculatingRoute
+                      ? language === 'hi' ? 'मार्ग खोज रहा है...' : 'Calculating Route...'
+                      : language === 'hi' ? 'सड़क मार्ग देखें' : 'Show Road Route'}
+                  </span>
                 </button>
 
                 <Link

@@ -70,7 +70,7 @@ function RelocationContent() {
   const [searchedPlace, setSearchedPlace] = useState(null);
   const [activeRouteInfo, setActiveRouteInfo] = useState(null);
 
-  // Pre-load from query param if passed
+  // Pre-load from query param if passed or acquire live device location
   useEffect(() => {
     if (habIdParam) {
       const found = mockHabitations.find((h) => h.id === habIdParam);
@@ -78,8 +78,10 @@ function RelocationContent() {
         setSelectedHabitation(found);
         setUserCoordinates(found.coordinates);
       }
+    } else if (requestUserLocation) {
+      requestUserLocation();
     }
-  }, [habIdParam, setUserCoordinates]);
+  }, [habIdParam, requestUserLocation, setUserCoordinates]);
 
   // Compute nearest shelter whenever user coordinates change & query OSRM + Nominatim
   useEffect(() => {
