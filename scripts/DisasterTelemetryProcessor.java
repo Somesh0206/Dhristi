@@ -1,6 +1,8 @@
 package scripts;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 /**
  * DisasterTelemetryProcessor.java
@@ -83,9 +85,12 @@ public class DisasterTelemetryProcessor {
     }
 
     public static void main(String[] args) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
+        String formattedTimestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).format(formatter);
+
         System.out.println("=================================================");
         System.out.println("  Dhristi Disaster Telemetry Processor (Java)");
-        System.out.println("  Timestamp: " + Instant.now().toString());
+        System.out.println("  Timestamp: " + formattedTimestamp);
         System.out.println("=================================================\n");
 
         HazardZone[] zones = new HazardZone[] {
