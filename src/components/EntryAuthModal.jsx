@@ -21,6 +21,7 @@ export default function EntryAuthModal() {
   const {
     isAuthModalOpen,
     setIsAuthModalOpen,
+    openSosModal,
     loginAs,
     currentUser,
     language,
@@ -37,6 +38,11 @@ export default function EntryAuthModal() {
   );
 
   if (!isAuthModalOpen) return null;
+
+  const handleImmediateSos = (tab = 'citizen') => {
+    setIsAuthModalOpen(false);
+    openSosModal(tab);
+  };
 
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
@@ -71,6 +77,21 @@ export default function EntryAuthModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-lg animate-in fade-in duration-200">
+      {/* Top Floating Emergency Bypass Trigger */}
+      <div className="absolute top-4 left-4 sm:left-8 z-10 flex items-center space-x-2">
+        <button
+          type="button"
+          onClick={() => handleImmediateSos('citizen')}
+          className="flex items-center space-x-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-2xl shadow-red-500/50 border border-red-400/50 font-black text-xs transition-all hover:scale-105 active:scale-95 animate-pulse"
+          title="Immediate Emergency SOS (No Login Needed)">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
+          </span>
+          <span>{language === 'hi' ? '🚨 आपातकालीन एसओएस (112)' : '🚨 IMMEDIATE SOS (112)'}</span>
+        </button>
+      </div>
+
       <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden">
         {/* Header Ribbon */}
         <div className="bg-gradient-to-r from-red-600 via-amber-600 to-red-700 p-6 text-white text-center relative">
@@ -92,6 +113,39 @@ export default function EntryAuthModal() {
 
         {/* Content Body */}
         <div className="p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+          {/* IMMEDIATE SOS EMERGENCY DISPATCH BAR */}
+          <div className="bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 p-3.5 rounded-2xl border-2 border-red-400 text-white shadow-xl shadow-red-600/30 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <span className="relative flex h-3.5 w-3.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-white"></span>
+              </span>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-black text-xs uppercase tracking-wider">
+                    {language === 'hi' ? '🚨 तत्काल आपातकालीन एसओएस' : '🚨 IMMEDIATE EMERGENCY SOS'}
+                  </span>
+                  <span className="text-[10px] bg-red-950/70 text-red-200 px-1.5 py-0.5 rounded font-bold">
+                    112 / PCR
+                  </span>
+                </div>
+                <p className="text-[11px] text-red-100/90 font-medium">
+                  {language === 'hi'
+                    ? 'बिना लॉगिन तुरंत 1-टैप राहत एवं पुलिस सहायता प्राप्त करें'
+                    : 'Instant Distress Beacon & Rescue Triage (No Login Required)'}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleImmediateSos('citizen')}
+              className="px-3.5 py-2 bg-white hover:bg-red-50 text-red-700 font-black text-xs rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 flex items-center space-x-1.5 flex-shrink-0"
+              title="Open Immediate Emergency SOS">
+              <span>{language === 'hi' ? 'एसओएस भेजें' : 'SOS NOW'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           {/* Language Selection Card */}
           <div className="bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
             <div className="flex items-center justify-between text-xs">
@@ -244,18 +298,38 @@ export default function EntryAuthModal() {
                 type="button"
                 onClick={handleQuickGuest}
                 className="flex-1 py-3 px-4 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                
                 {t('auth.guestBtn', 'Guest View')}
               </button>
               <button
                 type="submit"
                 className="flex-[2] py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold shadow-lg shadow-red-600/30 flex items-center justify-center space-x-2 transition-all hover:scale-[1.02]">
-                
                 <span>{t('auth.enterAs', 'Enter Portal as')} {selectedRole}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </form>
+        </div>
+
+        {/* Bottom Emergency Fast-Dial Bar */}
+        <div className="p-3 bg-slate-100 dark:bg-slate-950/80 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs px-6">
+          <span className="text-slate-500 dark:text-slate-400 font-semibold flex items-center space-x-1.5">
+            <span className="text-red-500 animate-pulse">●</span>
+            <span>{language === 'hi' ? 'आपातकालीन हॉटलाइन' : 'Emergency Hotlines'}:</span>
+          </span>
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => handleImmediateSos('police')}
+              className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-500/30 transition-colors flex items-center space-x-1">
+              <span>🚓 {language === 'hi' ? 'पुलिस 112' : 'Police 112'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleImmediateSos('citizen')}
+              className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold transition-all shadow-md flex items-center space-x-1">
+              <span>🚨 {language === 'hi' ? 'एसओएस' : 'Instant SOS'}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>);
