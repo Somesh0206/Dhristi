@@ -42,6 +42,7 @@ const hospitalShelterIcon = createCustomIcon('#059669', 'HSP');
 const stadiumShelterIcon = createCustomIcon('#D97706', 'STD');
 const govtShelterIcon = createCustomIcon('#2563EB', 'GOV');
 const defaultShelterIcon = createCustomIcon('#3B82F6', 'SHL');
+const searchedDestinationIcon = createCustomIcon('#2563EB', 'DST', true);
 
 function getShelterIcon(type) {
   if (type === 'SCHOOL') return schoolShelterIcon;
@@ -144,6 +145,8 @@ export default function MapComponent({
   userLocation,
   routeDestination,
   routeCoordinates,
+  searchedPlace,
+  routeInfo,
   sosBeacons = [],
   activeRescueSos,
   selectedHabitationId,
@@ -154,21 +157,33 @@ export default function MapComponent({
   const { mapTileProvider, setMapTileProvider } = useApp();
   const currentTile = tileProviders[mapTileProvider] || tileProviders.google_hybrid;
 
-  // Determine active route endpoints (either rescue route or evacuation route)
-  const routeOrigin = activeRescueSos ? activeRescueSos.nearestDepotCoords || [11.6140, 76.0850] : userLocation;
-  const routeDest = activeRescueSos ? activeRescueSos.coordinates : routeDestination;
+  // Determine active route endpoints (either searched destination, rescue route, or evacuation route)
+  const routeOrigin =
+    routeInfo?.originCoordinates ||
+    (activeRescueSos ? activeRescueSos.nearestDepotCoords || [11.614, 76.085] : userLocation);
+  const routeDest =
+    searchedPlace?.coordinates ||
+    (activeRescueSos ? activeRescueSos.coordinates : routeDestination);
 
   // Compute active road polyline
   const activeRoadPoints =
-  routeCoordinates && routeCoordinates.length >= 2 ?
-  routeCoordinates :
-  routeOrigin && routeDest ?
-  generateRealisticRoadPoints(routeOrigin, routeDest) :
-  null;
+    routeCoordinates && routeCoordinates.length >= 2
+      ? routeCoordinates
+      : routeInfo?.routeCoordinates && routeInfo.routeCoordinates.length >= 2
+      ? routeInfo.routeCoordinates
+      : routeOrigin && routeDest
+      ? generateRealisticRoadPoints(routeOrigin, routeDest)
+      : null;
 
   // Intermediate Checkpoint Waypoints
-  const checkpointA = activeRoadPoints && activeRoadPoints.length > 6 ? activeRoadPoints[Math.floor(activeRoadPoints.length * 0.35)] : null;
-  const checkpointB = activeRoadPoints && activeRoadPoints.length > 10 ? activeRoadPoints[Math.floor(activeRoadPoints.length * 0.72)] : null;
+  const checkpointA =
+    activeRoadPoints && activeRoadPoints.length > 6
+      ? activeRoadPoints[Math.floor(activeRoadPoints.length * 0.35)]
+      : null;
+  const checkpointB =
+    activeRoadPoints && activeRoadPoints.length > 10
+      ? activeRoadPoints[Math.floor(activeRoadPoints.length * 0.72)]
+      : null;
 
   return (
     <div
@@ -478,8 +493,8 @@ export default function MapComponent({
         }
 
         {/* User Current Location Marker */}
-        {userLocation &&
-        <Marker position={userLocation} icon={userLocationIcon}>
+        {userLocation && (
+          <Marker position={userLocation} icon={userLocationIcon}>
             <Popup>
               <div className="p-1.5 text-slate-100 text-xs font-semibold">
                 📍 You Are Here
@@ -489,7 +504,41 @@ export default function MapComponent({
               </div>
             </Popup>
           </Marker>
-        }
+        )}
+
+        {/* Searched Place / Destination Marker */}
+        {searchedPlace && searchedPlace.coordinates && (
+          <Marker position={searchedPlace.coordinates} icon={searchedDestinationIcon}>
+            <Popup>
+              <div className="p-2 space-y-1.5 text-slate-100 min-w-[210px]">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-blue-400">🎯 Destination Place</span>
+                  <span className="text-[9px] bg-blue-950 text-blue-300 font-bold px-1.5 py-0.5 rounded">
+                    {searchedPlace.category || 'SEARCHED'}
+                  </span>
+                </div>
+                <div className="font-bold text-xs text-white">{searchedPlace.name}</div>
+                <div className="text-[10px] text-slate-300 line-clamp-2">
+                  {searchedPlace.displayName || searchedPlace.name}
+                </div>
+                {routeInfo && (
+                  <div className="pt-1.5 border-t border-slate-700/80 grid grid-cols-2 gap-1 text-[10px] font-mono">
+                    <div className="bg-slate-800 p-1 rounded">
+                      <span className="text-slate-400 block text-[9px]">Drive Time:</span>
+                      <strong className="text-blue-400">
+                        {routeInfo.vehicleTimeFormatted || `${routeInfo.durationMins}m`}
+                      </strong>
+                    </div>
+                    <div className="bg-slate-800 p-1 rounded">
+                      <span className="text-slate-400 block text-[9px]">Distance:</span>
+                      <strong className="text-emerald-400">{routeInfo.distanceKm} km</strong>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        )}
 
         {/* Realistic Highway / Evacuation Road Route Corridor */}
         {activeRoadPoints && activeRoadPoints.length >= 2 &&

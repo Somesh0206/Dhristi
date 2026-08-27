@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MapWrapper from '@/components/MapWrapper';
+import MapPlaceSearchBar from '@/components/MapPlaceSearchBar';
 import { mockShelters } from '@/data/sheltersData';
 import { useApp } from '@/context/AppContext';
 import {
@@ -14,15 +15,22 @@ import {
   Phone,
   MapPin,
   ShieldCheck,
-  Filter
+  Filter,
+  Navigation,
+  Clock,
+  Car
 } from 'lucide-react';
 
 export default function SheltersPage() {
-  const { language, t } = useApp();
+  const { language, userCoordinates, t } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('ALL');
   const [selectedState, setSelectedState] = useState('ALL');
   const [selectedShelter, setSelectedShelter] = useState(mockShelters[0]);
+
+  // Place Search & Route ETA State
+  const [searchedPlace, setSearchedPlace] = useState(null);
+  const [activeRouteInfo, setActiveRouteInfo] = useState(null);
 
   // Extract unique states
   const availableStates = ['ALL', ...Array.from(new Set(mockShelters.map((s) => s.state || 'Other')))];
@@ -41,7 +49,69 @@ export default function SheltersPage() {
   });
 
   const totalNationalCapacity = mockShelters.reduce((acc, s) => acc + s.totalCapacity, 0);
-  const totalOccupancy = mockShelters.reduce((acc, s) => acc + s.currentOccupancy, 0);
+
+  // Automatically calculate route when a shelter is clicked
+  const handleSelectShelterWithRoute = async (shelter) => {
+    setSelectedShelter(shelter);
+    setSearchedPlace({
+      name: shelter.name,
+      displayName: shelter.address,
+      coordinates: shelter.coordinates,
+      category: 'SHELTER'
+    });
+
+    try {
+      const res = await fetch(
+        `/api/routing/osrm?startLat=${userCoordinates[0]}&startLon=${userCoordinates[1]}&destLat=${shelter.coordinates[0]}&destLon=${shelter.coordinates[1]}`
+      );
+      const data = await res.json();
+      setActiveRouteInfo({
+        destinationName: shelter.name,
+        destinationAddress: shelter.address,
+        destinationCoordinates: shelter.coordinates,
+        category: 'SHELTER',
+        state: shelter.state,
+        distanceKm: data.distanceKm,
+        durationMins: data.durationMins,
+        walkingDurationMins: data.walkingDurationMins,
+        vehicleTimeFormatted: data.vehicleTimeFormatted,
+        walkingTimeFormatted: data.walkingTimeFormatted,
+        routeCoordinates: data.coordinates,
+        steps: data.steps || [],
+        originCoordinates: userCoordinates,
+        originLabel: language === 'hi' ? 'आपका वर्तमान स्थान' : 'Your GPS Location'
+      });
+    } catch (e) {
+      console.warn('Shelter route calc failed:', e);
+    }
+  };
+
+  const handleRouteCalculated = (routeInfo) => {
+    setSearchedPlace({
+      name: routeInfo.destinationName,
+      displayName: routeInfo.destinationAddress,
+      coordinates: routeInfo.destinationCoordinates,
+      category: routeInfo.category
+    });
+    setActiveRouteInfo(routeInfo);
+
+    // If matches any shelter, select it
+    const matched = mockShelters.find(
+      (s) =>
+        Math.hypot(
+          s.coordinates[0] - routeInfo.destinationCoordinates[0],
+          s.coordinates[1] - routeInfo.destinationCoordinates[1]
+        ) < 0.05
+    );
+    if (matched) {
+      setSelectedShelter(matched);
+    }
+  };
+
+  const handleClearRoute = () => {
+    setSearchedPlace(null);
+    setActiveRouteInfo(null);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -88,6 +158,20 @@ export default function SheltersPage() {
         </div>
       </div>
 
+      {/* Place & Shelter Search with Road Routing & Travel Time */}
+      <MapPlaceSearchBar
+        onRouteCalculated={handleRouteCalculated}
+        onClearRoute={handleClearRoute}
+        activeRouteInfo={activeRouteInfo}
+        originCoordinates={userCoordinates}
+        originLabel={language === 'hi' ? 'आपका जीपीएस स्थान' : 'Your GPS Location'}
+        placeholder={
+          language === 'hi'
+            ? 'किसी भी आश्रय, शहर या स्थान का नाम खोजें (सटीक सड़क मार्ग व यात्रा समय देखें)...'
+            : 'Search any safe shelter, city, or landmark to show the road route and exact time required to reach...'
+        }
+      />
+
       {/* Search & Filter Bar */}
       <div className="glass-panel p-4 rounded-2xl flex flex-col lg:flex-row items-center justify-between gap-4">
         {/* Search */}
@@ -98,7 +182,7 @@ export default function SheltersPage() {
             placeholder={
               language === 'hi'
                 ? 'आश्रय स्थल, राज्य, ज़िला या पता खोजें...'
-                : 'Search by shelter, state, district, or address...'
+                : 'Filter list by shelter, state, or district...'
             }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -158,11 +242,15 @@ export default function SheltersPage() {
         {/* Left 7 Cols: Map View */}
         <div className="lg:col-span-7 space-y-4">
           <MapWrapper
-            center={selectedShelter.coordinates}
-            zoom={selectedState === 'ALL' ? 5 : 10}
+            center={searchedPlace?.coordinates || selectedShelter.coordinates}
+            zoom={selectedState === 'ALL' && !searchedPlace ? 5 : 11}
             shelters={filteredShelters}
-            onSelectShelter={(shelter) => setSelectedShelter(shelter)}
-            height="500px"
+            onSelectShelter={handleSelectShelterWithRoute}
+            userLocation={userCoordinates}
+            searchedPlace={searchedPlace}
+            routeInfo={activeRouteInfo}
+            routeCoordinates={activeRouteInfo?.routeCoordinates}
+            height="520px"
           />
 
           <div className="text-xs text-slate-400 text-center font-mono flex items-center justify-center space-x-2">
@@ -203,6 +291,29 @@ export default function SheltersPage() {
                   {language === 'hi' ? 'सहनशीलता' : 'Resilience'}
                 </span>
               </div>
+            </div>
+
+            {/* Travel Time & Direct Route Calculation Trigger */}
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center space-x-1">
+                  <Car className="w-3.5 h-3.5" />
+                  <span>{language === 'hi' ? 'सड़क मार्ग यात्रा समय:' : 'Road Travel Time to this Shelter:'}</span>
+                </div>
+                <div className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                  {activeRouteInfo?.destinationName === selectedShelter.name
+                    ? `${activeRouteInfo.vehicleTimeFormatted || `${activeRouteInfo.durationMins}m`} (${activeRouteInfo.distanceKm} km)`
+                    : 'Click to calculate live road route'}
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleSelectShelterWithRoute(selectedShelter)}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center space-x-1 shrink-0 shadow-sm"
+              >
+                <Navigation className="w-3 h-3" />
+                <span>{language === 'hi' ? 'मार्ग देखें' : 'Route Here'}</span>
+              </button>
             </div>
 
             {/* Carrying Capacity Gauge */}
@@ -370,7 +481,7 @@ export default function SheltersPage() {
           {filteredShelters.map((shelter) => (
             <div
               key={shelter.id}
-              onClick={() => setSelectedShelter(shelter)}
+              onClick={() => handleSelectShelterWithRoute(shelter)}
               className={`p-5 rounded-2xl cursor-pointer transition-all ${
                 selectedShelter.id === shelter.id
                   ? 'glass-panel border-2 border-emerald-500 shadow-lg'
