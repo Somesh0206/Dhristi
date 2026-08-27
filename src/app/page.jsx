@@ -490,7 +490,7 @@ export default function HomePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
-                {mockHabitations.slice(0, 4).map((hab) =>
+                {mockHabitations.slice(0, 8).map((hab) =>
                 <tr key={hab.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                     <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">
                       {hab.name}

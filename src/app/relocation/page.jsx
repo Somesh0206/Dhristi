@@ -326,31 +326,43 @@ function RelocationContent() {
             }
           </div>
 
-          {/* Quick Simulation Presets */}
-          <div className="glass-panel p-4 rounded-2xl">
-            <div className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-              {language === 'hi' ? 'उच्च-जोखिम बस्तियों से निकासी मार्ग का परीक्षण करें:' : 'Test Relocation Routing From High-Risk Habitations:'}
+          {/* Pan-India Habitation Simulation Presets */}
+          <div className="glass-panel p-4 rounded-2xl space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                {language === 'hi'
+                  ? '🇮🇳 अखिल भारतीय उच्च-जोखिम बस्तियों से निकासी मार्ग का परीक्षण करें:'
+                  : '🇮🇳 Test Relocation Routing From High-Risk Pan-India Habitations:'}
+              </div>
+              <span className="text-[10px] font-mono text-emerald-500 font-bold">
+                {mockHabitations.length} Monitored Settlement Corridors
+              </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {mockHabitations.slice(0, 3).map((hab) =>
-              <button
-                key={hab.id}
-                onClick={() => {
-                  setSelectedHabitation(hab);
-                  setUserCoordinates(hab.coordinates);
-                }}
-                className={`p-2.5 rounded-xl border text-left text-xs transition-all ${
-                userCoordinates[0] === hab.coordinates[0] ?
-                'border-blue-500 bg-blue-500/10 font-bold text-blue-600 dark:text-blue-400' :
-                'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`
-                }>
-                
-                  <div className="font-bold truncate">{hab.name}</div>
-                  <div className="text-[10px] text-slate-400">
-                    {hab.district} • {language === 'hi' ? 'आबादी:' : 'Pop:'} {hab.population}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
+              {mockHabitations.map((hab) => (
+                <button
+                  key={hab.id}
+                  onClick={() => {
+                    setSelectedHabitation(hab);
+                    setUserCoordinates(hab.coordinates);
+                  }}
+                  className={`p-2.5 rounded-xl border text-left text-xs transition-all ${
+                    userCoordinates[0] === hab.coordinates[0]
+                      ? 'border-blue-500 bg-blue-500/10 font-bold text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold truncate">{hab.name}</span>
+                    <span className="text-[9px] font-mono px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-slate-700 dark:text-slate-300 shrink-0 ml-1">
+                      {hab.state}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    {hab.district} • {language === 'hi' ? 'आबादी:' : 'Pop:'} {hab.population.toLocaleString()}
                   </div>
                 </button>
-              )}
+              ))}
             </div>
           </div>
         </div>

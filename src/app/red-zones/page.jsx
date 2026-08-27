@@ -174,43 +174,97 @@ export default function RedZonesPage() {
           {/* Quick Zone Focus Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 text-xs">
             <span className="font-bold text-slate-400 shrink-0">
-              {language === 'hi' ? 'त्वरित हॉटस्पॉट देखें:' : 'Jump To Hotspot:'}
+              {language === 'hi' ? '🇮🇳 त्वरित राज्य हॉटस्पॉट:' : '🇮🇳 Jump To State Hotspot:'}
             </span>
+            <button
+              onClick={() => {
+                setMapCenter([22.5937, 78.9629]);
+                setZoomLevel(5);
+              }}
+              className="px-2.5 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shrink-0 font-bold shadow-sm"
+            >
+              {language === 'hi' ? '🇮🇳 संपूर्ण भारत' : '🇮🇳 All India View'}
+            </button>
             <button
               onClick={() => {
                 setMapCenter([11.545, 76.135]);
                 setZoomLevel(12);
               }}
-              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white transition-colors shrink-0 font-medium">
-              
-              {language === 'hi' ? 'वायनाड ढलान (केरल)' : 'Wayanad Escarpment (Kerala)'}
+              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white transition-colors shrink-0 font-medium"
+            >
+              {language === 'hi' ? 'वायनाड (केरल)' : 'Wayanad (Kerala)'}
             </button>
             <button
               onClick={() => {
                 setMapCenter([30.556, 79.566]);
                 setZoomLevel(13);
               }}
-              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white transition-colors shrink-0 font-medium">
-              
-              {language === 'hi' ? 'जोशीमठ फॉल्ट बेल्ट (उत्तराखंड)' : 'Joshimath Fault Belt (Uttarakhand)'}
+              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white transition-colors shrink-0 font-medium"
+            >
+              {language === 'hi' ? 'जोशीमठ (उत्तराखंड)' : 'Joshimath (Uttarakhand)'}
+            </button>
+            <button
+              onClick={() => {
+                setMapCenter([32.225, 76.33]);
+                setZoomLevel(12);
+              }}
+              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white transition-colors shrink-0 font-medium"
+            >
+              {language === 'hi' ? 'धर्मशाला (हिमाचल)' : 'Dharamshala (HP)'}
+            </button>
+            <button
+              onClick={() => {
+                setMapCenter([26.587, 93.361]);
+                setZoomLevel(11);
+              }}
+              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white transition-colors shrink-0 font-medium"
+            >
+              {language === 'hi' ? 'काजीरंगा / ब्रह्मपुत्र (असम)' : 'Kaziranga (Assam)'}
             </button>
             <button
               onClick={() => {
                 setMapCenter([26.126, 86.605]);
                 setZoomLevel(11);
               }}
-              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white transition-colors shrink-0 font-medium">
-              
-              {language === 'hi' ? 'कोसी नदी क्षेत्र (बिहार)' : 'Kosi River Lowlands (Bihar)'}
+              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white transition-colors shrink-0 font-medium"
+            >
+              {language === 'hi' ? 'कोसी नदी (बिहार)' : 'Kosi Basin (Bihar)'}
             </button>
             <button
               onClick={() => {
                 setMapCenter([19.813, 85.831]);
                 setZoomLevel(11);
               }}
-              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white transition-colors shrink-0 font-medium">
-              
-              {language === 'hi' ? 'पुरी चक्रवात तट (ओडिशा)' : 'Puri Cyclone Coast (Odisha)'}
+              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white transition-colors shrink-0 font-medium"
+            >
+              {language === 'hi' ? 'पुरी तट (ओडिशा)' : 'Puri Coast (Odisha)'}
+            </button>
+            <button
+              onClick={() => {
+                setMapCenter([18.083, 73.416]);
+                setZoomLevel(12);
+              }}
+              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white transition-colors shrink-0 font-medium"
+            >
+              {language === 'hi' ? 'महाड (महाराष्ट्र)' : 'Mahad (Maharashtra)'}
+            </button>
+            <button
+              onClick={() => {
+                setMapCenter([23.35, 69.8]);
+                setZoomLevel(10);
+              }}
+              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white transition-colors shrink-0 font-medium"
+            >
+              {language === 'hi' ? 'भुज कच्छ (गुजरात)' : 'Bhuj Kutch (Gujarat)'}
+            </button>
+            <button
+              onClick={() => {
+                setMapCenter([34.07, 74.81]);
+                setZoomLevel(12);
+              }}
+              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white transition-colors shrink-0 font-medium"
+            >
+              {language === 'hi' ? 'श्रीनगर (जम्मू-कश्मीर)' : 'Srinagar (J&K)'}
             </button>
           </div>
         </div>
