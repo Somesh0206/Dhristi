@@ -27,8 +27,12 @@ yarn-error.log*
 .env*.local
 
 # vercel
-.vercel
+# Python & Java build artifacts
+*.class
+*.pyc
+__pycache__/
 
+.vercel
 # Playwright
 playwright-report/
 test-results/
