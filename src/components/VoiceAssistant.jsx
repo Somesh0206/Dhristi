@@ -497,8 +497,8 @@ export default function VoiceAssistant() {
 
   if (!isVoiceAssistantOpen) {
     return (
-      /* Floating Bottom-Left Dock: VAANI AI Voice Button + Encrypted Chat Button Together */
-      <div className="fixed bottom-6 left-6 z-40 flex items-center space-x-3">
+      /* Floating Bottom-Right Dock: VAANI AI Voice Button + Encrypted Chat Button Stacked */
+      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end space-y-3">
         {/* VAANI AI Voice Trigger */}
         <button
           onClick={openVoiceAssistant}
@@ -520,11 +520,11 @@ export default function VoiceAssistant() {
         {/* Encrypted 1-on-1 Chat Trigger */}
         <Link
           href="/chat"
-          className="group relative flex items-center space-x-2 px-3.5 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full shadow-2xl shadow-emerald-500/40 border border-emerald-400/40 transition-all hover:scale-105 active:scale-95"
+          className="group relative flex items-center space-x-2.5 px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full shadow-2xl shadow-emerald-500/40 border border-emerald-400/40 transition-all hover:scale-105 active:scale-95"
           title="Open Encrypted 1-on-1 Disaster Support Chat">
           
           <Lock className="w-4 h-4 text-emerald-200" />
-          <span className="font-black text-xs tracking-wider uppercase hidden sm:inline">
+          <span className="font-black text-xs tracking-wider uppercase">
             {language === 'hi' ? 'सुरक्षित चैट' : 'SECURE CHAT'}
           </span>
           <span className="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
