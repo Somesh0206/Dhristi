@@ -43,7 +43,8 @@ jobs:
 
       - name: Verify Java Disaster Telemetry Processor
         run: |
-          java scripts/DisasterTelemetryProcessor.java
+          javac scripts/DisasterTelemetryProcessor.java
+          java scripts.DisasterTelemetryProcessor
 
       - name: Build Next.js Application
         run: npm run build

@@ -9,13 +9,11 @@ import {
   Eye,
   Lock,
   ArrowRight,
-
-
   X,
   BadgeCheck,
   Languages,
-  Check } from
-'lucide-react';
+  Check
+} from 'lucide-react';
 
 export default function EntryAuthModal() {
   const {
