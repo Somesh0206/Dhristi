@@ -123,8 +123,8 @@ export function AppProvider({ children }) {
   // Voice Assistant State
   const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
 
-  // Map Tile Provider State
-  const [mapTileProvider, setMapTileProvider] = useState('google_hybrid');
+  // Map Tile Provider State (Default: Google Maps Roadmap)
+  const [mapTileProvider, setMapTileProvider] = useState('google_roadmap');
 
   const [isSosModalOpen, setIsSosModalOpen] = useState(false);
   const [sosModalTab, setSosModalTab] = useState('citizen');

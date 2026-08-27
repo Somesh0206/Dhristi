@@ -149,7 +149,7 @@ export default function MapComponent({
   height = '500px'
 }) {
   const { mapTileProvider, setMapTileProvider } = useApp();
-  const currentTile = tileProviders[mapTileProvider] || tileProviders.google_hybrid;
+  const currentTile = tileProviders[mapTileProvider] || tileProviders.google_roadmap;
 
   // Determine active route endpoints (either searched destination, rescue route, or evacuation route)
   const routeOrigin =
@@ -184,21 +184,21 @@ export default function MapComponent({
   return (
     <div
       style={{ height, width: '100%' }}
-      className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 group">
-      
-      {/* Floating Map Tile Provider Selector (Google Maps / Apple Maps / OSM) */}
-      <div className="absolute top-3 right-3 z-[1000] bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-700 shadow-2xl flex items-center space-x-1 text-xs">
-        <Layers className="w-3.5 h-3.5 text-blue-400 ml-1 mr-0.5" />
+      className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 group"
+    >
+      {/* Floating Map Tile Provider Selector (Default: Google Maps Roadmap) */}
+      <div className="absolute top-3 right-3 z-[1000] bg-slate-900/90 backdrop-blur-md px-2 py-1.5 rounded-xl border border-slate-700/80 shadow-2xl flex items-center space-x-1.5 text-xs transition-all">
+        <Layers className="w-3.5 h-3.5 text-blue-400 shrink-0" />
         <select
           value={mapTileProvider}
           onChange={(e) => setMapTileProvider(e.target.value)}
-          className="bg-slate-800 text-slate-100 font-bold text-[11px] py-1 px-2 rounded-lg border border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-          
-          <option value="google_hybrid">🛰️ Google Maps (Hybrid)</option>
-          <option value="google_terrain">⛰️ Google Maps (Terrain)</option>
-          <option value="google_roadmap">🗺️ Google Maps (Roadmap)</option>
-          <option value="esri_satellite">🍏 Apple / Esri Satellite</option>
-          <option value="osm">🌐 OpenStreetMap</option>
+          className="bg-transparent text-slate-100 font-bold text-[11px] focus:outline-none cursor-pointer pr-1"
+        >
+          <option value="google_roadmap" className="bg-slate-900 text-white">🗺️ Google Maps (Roadmap)</option>
+          <option value="google_hybrid" className="bg-slate-900 text-white">🛰️ Google Maps (Satellite Hybrid)</option>
+          <option value="google_terrain" className="bg-slate-900 text-white">⛰️ Google Maps (3D Terrain)</option>
+          <option value="esri_satellite" className="bg-slate-900 text-white">🍏 Apple / Esri Satellite</option>
+          <option value="osm" className="bg-slate-900 text-white">🌐 OpenStreetMap</option>
         </select>
       </div>
 
