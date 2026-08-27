@@ -13,7 +13,15 @@ Shelter types supported: SCHOOL, HOSPITAL, STADIUM, GOVT_OFFICE
 
 import json
 import argparse
-from datetime import datetime
+import sys
+from datetime import datetime, timezone
+
+# Ensure stdout handles UTF-8 properly across cross-platform terminals
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 
 
 # Sample shelter database (mirrors src/data/sheltersData.js)
@@ -149,7 +157,7 @@ def redistribute_overflow(shelters):
 def generate_report(shelters):
     """Generate a full capacity utilization report."""
     report = {
-        'generated_at': datetime.utcnow().isoformat() + 'Z',
+        'generated_at': datetime.now(timezone.utc).isoformat(),
         'total_shelters': len(shelters),
         'total_capacity': sum(s['total_capacity'] for s in shelters),
         'total_occupancy': sum(s['current_occupancy'] for s in shelters),

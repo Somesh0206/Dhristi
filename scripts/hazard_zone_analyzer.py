@@ -16,7 +16,15 @@ import csv
 import json
 import argparse
 import math
-from datetime import datetime
+import sys
+from datetime import datetime, timezone
+
+# Ensure stdout handles UTF-8 properly across cross-platform terminals
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 
 
 # Geotechnical constants (Wayanad laterite soil profile)
@@ -93,7 +101,7 @@ def analyze_csv(input_path):
                     'factor_of_safety': fs,
                     'risk_level': risk,
                     'alert': risk == 'RED',
-                    'analyzed_at': datetime.utcnow().isoformat() + 'Z',
+                    'analyzed_at': datetime.now(timezone.utc).isoformat(),
                 })
             except (ValueError, KeyError) as e:
                 print(f"Warning: Could not parse row {row}: {e}")
