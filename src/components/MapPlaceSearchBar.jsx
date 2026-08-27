@@ -71,7 +71,7 @@ export default function MapPlaceSearchBar({
       fetch(`/api/geocoding/search?q=${encodeURIComponent(query.trim())}`)
         .then((res) => res.json())
         .then((data) => {
-          if (data.results) {
+          if (data && data.results) {
             setSuggestions(data.results);
             setShowDropdown(true);
           }
@@ -89,7 +89,7 @@ export default function MapPlaceSearchBar({
     setQuery(place.name);
     setIsRouting(true);
 
-    let startCoords = originCoordinates || userCoordinates;
+    let startCoords = originCoordinates || userCoordinates || [11.5510, 76.1305];
     if (!originCoordinates && requestUserLocation) {
       try {
         const freshCoords = await requestUserLocation();
@@ -97,11 +97,11 @@ export default function MapPlaceSearchBar({
           startCoords = freshCoords;
         }
       } catch {
-        // use fallback userCoordinates
+        // fallback
       }
     }
 
-    const destCoords = place.coordinates;
+    const destCoords = place.coordinates || [11.6103, 76.0828];
 
     try {
       const res = await fetch(
@@ -115,12 +115,12 @@ export default function MapPlaceSearchBar({
         destinationCoordinates: destCoords,
         category: place.category || 'LOCATION',
         state: place.state || 'India',
-        distanceKm: data.distanceKm,
-        durationMins: data.durationMins,
-        walkingDurationMins: data.walkingDurationMins,
-        vehicleTimeFormatted: data.vehicleTimeFormatted,
-        walkingTimeFormatted: data.walkingTimeFormatted,
-        routeCoordinates: data.coordinates,
+        distanceKm: data.distanceKm || 0,
+        durationMins: data.durationMins || 0,
+        walkingDurationMins: data.walkingDurationMins || 0,
+        vehicleTimeFormatted: data.vehicleTimeFormatted || `${data.durationMins || 0} mins`,
+        walkingTimeFormatted: data.walkingTimeFormatted || `${data.walkingDurationMins || 0} mins`,
+        routeCoordinates: data.coordinates || [startCoords, destCoords],
         steps: data.steps || [],
         originCoordinates: startCoords,
         originLabel: originLabel || (language === 'hi' ? 'आपका वर्तमान जीपीएस स्थान' : 'Your Present GPS Location')
@@ -149,25 +149,36 @@ export default function MapPlaceSearchBar({
 
   const defaultQuickPills = [
     { name: 'Joshimath, UK', query: 'Joshimath' },
-    { name: 'Wayanad, KL', query: 'Wayanad' },
     { name: 'Dharamshala, HP', query: 'Dharamshala' },
-    { name: 'Kaziranga, AS', query: 'Kaziranga' },
-    { name: 'Puri Coast, OD', query: 'Puri' },
-    { name: 'Kosi Basin, BR', query: 'Supaul' },
-    { name: 'Mahad, MH', query: 'Mahad' },
-    { name: 'Bhuj Kutch, GJ', query: 'Bhuj' }
+    { name: 'Wayanad, Kerala', query: 'Wayanad' },
+    { name: 'Kaziranga, Assam', query: 'Kaziranga' },
+    { name: 'Puri Coast, Odisha', query: 'Puri' },
+    { name: 'Bhuj, Gujarat', query: 'Bhuj' }
   ];
 
+  // Derive safe coordinates for live map navigation links
+  const safeOrigin =
+    activeRoute?.originCoordinates ||
+    originCoordinates ||
+    userCoordinates ||
+    [11.5510, 76.1305];
+
+  const safeDest =
+    activeRoute?.destinationCoordinates ||
+    [11.6103, 76.0828];
+
+  const stepsList = Array.isArray(activeRoute?.steps) ? activeRoute.steps : [];
+
   return (
-    <div className={`space-y-3 ${className}`} ref={searchContainerRef}>
+    <div className={`w-full space-y-3 ${className}`}>
       {/* Search Input Bar */}
-      <div className="relative">
-        <div className="flex items-center glass-panel rounded-2xl border border-slate-200 dark:border-slate-800 focus-within:border-blue-500 shadow-md bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="pl-3.5 pr-2 text-slate-400">
+      <div ref={searchContainerRef} className="relative w-full">
+        <div className="glass-panel rounded-2xl flex items-center px-3.5 py-1 border border-slate-300 dark:border-slate-700/80 shadow-md focus-within:ring-2 focus-within:ring-blue-500 transition-all bg-white dark:bg-slate-900/90">
+          <div className="mr-3 text-blue-500">
             {isLoading || isRouting ? (
-              <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
             ) : (
-              <Search className="w-4 h-4 text-blue-500" />
+              <Search className="w-5 h-5 text-slate-400" />
             )}
           </div>
 
@@ -270,7 +281,7 @@ export default function MapPlaceSearchBar({
                   <span>Road Route Active</span>
                 </span>
                 <span className="text-[10px] font-bold text-slate-400">
-                  {activeRoute.originLabel} ➔ {activeRoute.destinationName}
+                  {activeRoute.originLabel || 'Your Location'} ➔ {activeRoute.destinationName}
                 </span>
               </div>
               <h4 className="text-sm font-black text-slate-900 dark:text-white">
@@ -299,7 +310,7 @@ export default function MapPlaceSearchBar({
                 <span>{language === 'hi' ? 'वाहन समय' : 'Drive Time'}</span>
               </div>
               <div className="text-base font-black text-blue-600 dark:text-blue-400 font-mono mt-0.5">
-                {activeRoute.vehicleTimeFormatted || `${activeRoute.durationMins} mins`}
+                {activeRoute.vehicleTimeFormatted || `${activeRoute.durationMins || 0} mins`}
               </div>
             </div>
 
@@ -310,7 +321,7 @@ export default function MapPlaceSearchBar({
                 <span>{language === 'hi' ? 'पैदल समय' : 'Walking Time'}</span>
               </div>
               <div className="text-base font-black text-amber-600 dark:text-amber-400 font-mono mt-0.5">
-                {activeRoute.walkingTimeFormatted || `${activeRoute.walkingDurationMins || Math.round(activeRoute.distanceKm * 14)} mins`}
+                {activeRoute.walkingTimeFormatted || `${activeRoute.walkingDurationMins || Math.round((activeRoute.distanceKm || 1) * 14)} mins`}
               </div>
             </div>
 
@@ -321,7 +332,7 @@ export default function MapPlaceSearchBar({
                 <span>{language === 'hi' ? 'सड़क दूरी' : 'Distance'}</span>
               </div>
               <div className="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
-                {activeRoute.distanceKm} km
+                {activeRoute.distanceKm || 0} km
               </div>
             </div>
           </div>
@@ -350,14 +361,14 @@ export default function MapPlaceSearchBar({
               <span>
                 {showSteps
                   ? language === 'hi' ? 'मोड़ निर्देश छुपाएं' : 'Hide Turn-by-Turn'
-                  : language === 'hi' ? 'मोड़ निर्देश देखें' : `View ${activeRoute.steps.length} Road Steps`}
+                  : language === 'hi' ? 'मोड़ निर्देश देखें' : `View ${stepsList.length} Road Steps`}
               </span>
               {showSteps ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
 
             <div className="flex items-center space-x-2">
               <a
-                href={`https://www.google.com/maps/dir/?api=1&origin=${startCoords[0]},${startCoords[1]}&destination=${activeRoute.destinationCoordinates[0]},${activeRoute.destinationCoordinates[1]}`}
+                href={`https://www.google.com/maps/dir/?api=1&origin=${safeOrigin[0]},${safeOrigin[1]}&destination=${safeDest[0]},${safeDest[1]}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center space-x-1 shadow-sm"
@@ -367,7 +378,7 @@ export default function MapPlaceSearchBar({
               </a>
 
               <a
-                href={`https://maps.apple.com/?saddr=${startCoords[0]},${startCoords[1]}&daddr=${activeRoute.destinationCoordinates[0]},${activeRoute.destinationCoordinates[1]}`}
+                href={`https://maps.apple.com/?saddr=${safeOrigin[0]},${safeOrigin[1]}&daddr=${safeDest[0]},${safeDest[1]}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold flex items-center space-x-1"
@@ -379,9 +390,9 @@ export default function MapPlaceSearchBar({
           </div>
 
           {/* Collapsible Turn-by-Turn Steps */}
-          {showSteps && activeRoute.steps.length > 0 && (
+          {showSteps && stepsList.length > 0 && (
             <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 pt-2 border-t border-slate-200 dark:border-slate-800">
-              {activeRoute.steps.map((step, idx) => (
+              {stepsList.map((step, idx) => (
                 <div
                   key={idx}
                   className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs flex items-center justify-between text-slate-700 dark:text-slate-300"

@@ -55,7 +55,9 @@ function getShelterIcon(type) {
 function MapController({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, zoom, { animate: true });
+    if (center && Array.isArray(center) && center.length === 2 && typeof center[0] === 'number' && !isNaN(center[0])) {
+      map.setView(center, zoom || 11, { animate: true });
+    }
   }, [center, zoom, map]);
   return null;
 }
@@ -88,36 +90,28 @@ const tileProviders = {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Generate realistic mountain highway road curvature if raw vectors aren't available
 function generateRealisticRoadPoints(start, end) {
+  if (!start || !end || !Array.isArray(start) || !Array.isArray(end) || start.length < 2 || end.length < 2) {
+    return null;
+  }
+  const s0 = typeof start[0] === 'number' ? start[0] : parseFloat(start[0]);
+  const s1 = typeof start[1] === 'number' ? start[1] : parseFloat(start[1]);
+  const e0 = typeof end[0] === 'number' ? end[0] : parseFloat(end[0]);
+  const e1 = typeof end[1] === 'number' ? end[1] : parseFloat(end[1]);
+  if (isNaN(s0) || isNaN(s1) || isNaN(e0) || isNaN(e1)) return null;
+
   const points = [];
   const steps = 18;
-  const dLat = end[0] - start[0];
-  const dLng = end[1] - start[1];
+  const dLat = e0 - s0;
+  const dLng = e1 - s1;
 
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
     // Harmonic curve representing switchbacks avoiding steep ravines
     const curveOffset = Math.sin(t * Math.PI) * 0.007 + Math.sin(t * Math.PI * 2.5) * 0.0035;
-    const lat = start[0] + dLat * t + curveOffset * 0.5;
-    const lng = start[1] + dLng * t - curveOffset;
+    const lat = s0 + dLat * t + curveOffset * 0.5;
+    const lng = s1 + dLng * t - curveOffset;
     points.push([lat, lng]);
   }
   return points;
@@ -137,7 +131,7 @@ const checkpointIcon = L.divIcon({
 });
 
 export default function MapComponent({
-  center,
+  center = [11.5510, 76.1305],
   zoom = 11,
   zones = [],
   habitations = [],
@@ -165,15 +159,17 @@ export default function MapComponent({
     searchedPlace?.coordinates ||
     (activeRescueSos ? activeRescueSos.coordinates : routeDestination);
 
-  // Compute active road polyline
-  const activeRoadPoints =
-    routeCoordinates && routeCoordinates.length >= 2
+  // Compute active road polyline safely
+  const rawPoints =
+    routeCoordinates && Array.isArray(routeCoordinates) && routeCoordinates.length >= 2
       ? routeCoordinates
-      : routeInfo?.routeCoordinates && routeInfo.routeCoordinates.length >= 2
+      : routeInfo?.routeCoordinates && Array.isArray(routeInfo.routeCoordinates) && routeInfo.routeCoordinates.length >= 2
       ? routeInfo.routeCoordinates
       : routeOrigin && routeDest
       ? generateRealisticRoadPoints(routeOrigin, routeDest)
       : null;
+
+  const activeRoadPoints = Array.isArray(rawPoints) && rawPoints.length >= 2 ? rawPoints : null;
 
   // Intermediate Checkpoint Waypoints
   const checkpointA =
@@ -493,13 +489,13 @@ export default function MapComponent({
         }
 
         {/* User Current Location Marker */}
-        {userLocation && (
+        {userLocation && Array.isArray(userLocation) && userLocation.length === 2 && !isNaN(userLocation[0]) && !isNaN(userLocation[1]) && (
           <Marker position={userLocation} icon={userLocationIcon}>
             <Popup>
               <div className="p-1.5 text-slate-100 text-xs font-semibold">
                 📍 You Are Here
                 <div className="text-[10px] text-slate-300 font-mono">
-                  {userLocation[0].toFixed(5)}, {userLocation[1].toFixed(5)}
+                  {Number(userLocation[0]).toFixed(5)}, {Number(userLocation[1]).toFixed(5)}
                 </div>
               </div>
             </Popup>
@@ -507,7 +503,7 @@ export default function MapComponent({
         )}
 
         {/* Searched Place / Destination Marker */}
-        {searchedPlace && searchedPlace.coordinates && (
+        {searchedPlace && searchedPlace.coordinates && Array.isArray(searchedPlace.coordinates) && searchedPlace.coordinates.length === 2 && !isNaN(searchedPlace.coordinates[0]) && !isNaN(searchedPlace.coordinates[1]) && (
           <Marker position={searchedPlace.coordinates} icon={searchedDestinationIcon}>
             <Popup>
               <div className="p-2 space-y-1.5 text-slate-100 min-w-[210px]">
@@ -526,12 +522,12 @@ export default function MapComponent({
                     <div className="bg-slate-800 p-1 rounded">
                       <span className="text-slate-400 block text-[9px]">Drive Time:</span>
                       <strong className="text-blue-400">
-                        {routeInfo.vehicleTimeFormatted || `${routeInfo.durationMins}m`}
+                        {routeInfo.vehicleTimeFormatted || `${routeInfo.durationMins || 0}m`}
                       </strong>
                     </div>
                     <div className="bg-slate-800 p-1 rounded">
                       <span className="text-slate-400 block text-[9px]">Distance:</span>
-                      <strong className="text-emerald-400">{routeInfo.distanceKm} km</strong>
+                      <strong className="text-emerald-400">{routeInfo.distanceKm || 0} km</strong>
                     </div>
                   </div>
                 )}
@@ -541,46 +537,46 @@ export default function MapComponent({
         )}
 
         {/* Realistic Highway / Evacuation Road Route Corridor */}
-        {activeRoadPoints && activeRoadPoints.length >= 2 &&
-        <>
+        {activeRoadPoints && activeRoadPoints.length >= 2 && (
+          <>
             {/* Layer 1: Outer Safety Buffer Glow */}
             <Polyline
-            positions={activeRoadPoints}
-            pathOptions={{
-              color: '#06B6D4',
-              weight: 10,
-              opacity: 0.35,
-              lineCap: 'round',
-              lineJoin: 'round'
-            }} />
-          
+              positions={activeRoadPoints}
+              pathOptions={{
+                color: '#06B6D4',
+                weight: 10,
+                opacity: 0.35,
+                lineCap: 'round',
+                lineJoin: 'round'
+              }}
+            />
 
             {/* Layer 2: Main Solid Asphalt Road Vector */}
             <Polyline
-            positions={activeRoadPoints}
-            pathOptions={{
-              color: '#2563EB',
-              weight: 5,
-              opacity: 0.95,
-              lineCap: 'round',
-              lineJoin: 'round'
-            }} />
-          
+              positions={activeRoadPoints}
+              pathOptions={{
+                color: '#2563EB',
+                weight: 5,
+                opacity: 0.95,
+                lineCap: 'round',
+                lineJoin: 'round'
+              }}
+            />
 
             {/* Layer 3: Dashed Road Markings & Direction Flow */}
             <Polyline
-            positions={activeRoadPoints}
-            pathOptions={{
-              color: '#FFFFFF',
-              weight: 2,
-              dashArray: '6, 8',
-              opacity: 0.9
-            }} />
-          
+              positions={activeRoadPoints}
+              pathOptions={{
+                color: '#FFFFFF',
+                weight: 2,
+                dashArray: '6, 8',
+                opacity: 0.9
+              }}
+            />
 
             {/* Checkpoint Alpha Marker */}
-            {checkpointA &&
-          <Marker position={checkpointA} icon={checkpointIcon}>
+            {checkpointA && Array.isArray(checkpointA) && checkpointA.length === 2 && (
+              <Marker position={checkpointA} icon={checkpointIcon}>
                 <Popup>
                   <div className="p-1.5 text-xs font-semibold text-slate-100">
                     <div className="text-cyan-400 font-bold">🛣️ Checkpoint Alpha</div>
@@ -588,11 +584,11 @@ export default function MapComponent({
                   </div>
                 </Popup>
               </Marker>
-          }
+            )}
 
             {/* Checkpoint Bravo Marker */}
-            {checkpointB &&
-          <Marker position={checkpointB} icon={checkpointIcon}>
+            {checkpointB && Array.isArray(checkpointB) && checkpointB.length === 2 && (
+              <Marker position={checkpointB} icon={checkpointIcon}>
                 <Popup>
                   <div className="p-1.5 text-xs font-semibold text-slate-100">
                     <div className="text-cyan-400 font-bold">🚨 Checkpoint Bravo</div>
@@ -600,9 +596,9 @@ export default function MapComponent({
                   </div>
                 </Popup>
               </Marker>
-          }
+            )}
           </>
-        }
+        )}
       </MapContainer>
     </div>);
 

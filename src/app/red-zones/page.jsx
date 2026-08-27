@@ -50,6 +50,11 @@ export default function RedZonesPage() {
       );
       const data = await res.json();
 
+      const coords =
+        data.coordinates && Array.isArray(data.coordinates) && data.coordinates.length >= 2
+          ? data.coordinates
+          : [originCoords, hab.coordinates];
+
       const routeInfo = {
         destinationName: hab.name,
         destinationAddress: `${hab.name}, ${hab.district}, ${hab.state}`,
@@ -59,10 +64,10 @@ export default function RedZonesPage() {
         distanceKm: data.distanceKm || 0,
         durationMins: data.durationMins || 0,
         walkingDurationMins: data.walkingDurationMins || 0,
-        vehicleTimeFormatted: data.vehicleTimeFormatted || `${data.durationMins || 0}m`,
-        walkingTimeFormatted: data.walkingTimeFormatted || `${data.walkingDurationMins || 0}m`,
-        routeCoordinates: data.coordinates || [originCoords, hab.coordinates],
-        steps: data.steps || [],
+        vehicleTimeFormatted: data.vehicleTimeFormatted || `${data.durationMins || 0} mins`,
+        walkingTimeFormatted: data.walkingTimeFormatted || `${data.walkingDurationMins || 0} mins`,
+        routeCoordinates: coords,
+        steps: Array.isArray(data.steps) ? data.steps : [],
         originCoordinates: originCoords,
         originLabel: language === 'hi' ? 'आपका वर्तमान जीपीएस स्थान' : 'Your Present GPS Location'
       };

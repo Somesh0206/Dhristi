@@ -77,19 +77,27 @@ export default function SheltersPage() {
         `/api/routing/osrm?startLat=${originCoords[0]}&startLon=${originCoords[1]}&destLat=${shelter.coordinates[0]}&destLon=${shelter.coordinates[1]}`
       );
       const data = await res.json();
+      const dist = data.distanceKm || 0;
+      const dur = data.durationMins || 0;
+      const walkDur = data.walkingDurationMins || 0;
+      const coords =
+        data.coordinates && Array.isArray(data.coordinates) && data.coordinates.length >= 2
+          ? data.coordinates
+          : [originCoords, shelter.coordinates];
+
       setActiveRouteInfo({
         destinationName: shelter.name,
         destinationAddress: shelter.address,
         destinationCoordinates: shelter.coordinates,
         category: 'SHELTER',
-        state: shelter.state,
-        distanceKm: data.distanceKm,
-        durationMins: data.durationMins,
-        walkingDurationMins: data.walkingDurationMins,
-        vehicleTimeFormatted: data.vehicleTimeFormatted,
-        walkingTimeFormatted: data.walkingTimeFormatted,
-        routeCoordinates: data.coordinates,
-        steps: data.steps || [],
+        state: shelter.state || 'India',
+        distanceKm: dist,
+        durationMins: dur,
+        walkingDurationMins: walkDur,
+        vehicleTimeFormatted: data.vehicleTimeFormatted || `${dur}m`,
+        walkingTimeFormatted: data.walkingTimeFormatted || `${walkDur}m`,
+        routeCoordinates: coords,
+        steps: Array.isArray(data.steps) ? data.steps : [],
         originCoordinates: originCoords,
         originLabel: language === 'hi' ? 'आपका वर्तमान जीपीएस स्थान' : 'Your GPS Location'
       });
