@@ -1,9 +1,22 @@
 import { test, expect } from '@playwright/test';
 
+async function dismissEntryModalIfOpen(page) {
+  try {
+    const guestBtn = page.locator('button:has-text("Guest View")').first();
+    if (await guestBtn.isVisible({ timeout: 1200 })) {
+      await guestBtn.click();
+    }
+  } catch (e) {
+    // already dismissed
+  }
+}
+
 test.describe('Dhristi - End-to-End E2E Test Suite', () => {
   test('1. Homepage loads, displays hero, KPI metrics, and brand logo', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveTitle(/Dhristi/i);
+
+    await dismissEntryModalIfOpen(page);
 
     // Verify brand
     const brand = page.locator('text=DHRISTI').first();
@@ -19,6 +32,7 @@ test.describe('Dhristi - End-to-End E2E Test Suite', () => {
 
   test('2. Language toggle switches full-site interface to Hindi and back to English', async ({ page }) => {
     await page.goto('/');
+    await dismissEntryModalIfOpen(page);
 
     // Locate language switcher button in navbar
     const langBtn = page.locator('button[title*="Language"]').first();
@@ -36,7 +50,7 @@ test.describe('Dhristi - End-to-End E2E Test Suite', () => {
   test('3. Universal Emergency SOS Hub opens and displays 4 tabs', async ({ page }) => {
     await page.goto('/');
 
-    // Click red SOS button in header
+    // Click SOS button (either Immediate SOS trigger or Navbar SOS)
     const sosBtn = page.locator('button:has-text("SOS")').first();
     await expect(sosBtn).toBeVisible();
     await sosBtn.click();
@@ -106,8 +120,9 @@ test.describe('Dhristi - End-to-End E2E Test Suite', () => {
 
   test('7. Dhristi Vaani AI Voice Assistant opens and presents prompt chips', async ({ page }) => {
     await page.goto('/');
+    await dismissEntryModalIfOpen(page);
 
-    // Click Vaani AI button in navbar
+    // Click Vaani AI button in navbar or floating dock
     const voiceBtn = page.locator('button[title*="Voice Assistant"]').first();
     await expect(voiceBtn).toBeVisible();
     await voiceBtn.click();
