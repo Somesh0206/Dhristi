@@ -18,24 +18,43 @@ import {
   Filter,
   Navigation,
   Clock,
-  Car
+  Car,
+  PlusCircle,
+  Sparkles
 } from 'lucide-react';
 
 export default function SheltersPage() {
-  const { language, userCoordinates, requestUserLocation, t } = useApp();
+  const {
+    language,
+    userCoordinates,
+    requestUserLocation,
+    shelters,
+    openAddShelterModal,
+    currentUser,
+    t
+  } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('ALL');
   const [selectedState, setSelectedState] = useState('ALL');
-  const [selectedShelter, setSelectedShelter] = useState(mockShelters[0]);
+  const [selectedShelter, setSelectedShelter] = useState(shelters?.[0] || mockShelters[0]);
+
+  // Sync selected shelter if shelters list updates
+  useEffect(() => {
+    if (shelters && shelters.length > 0 && !selectedShelter) {
+      setSelectedShelter(shelters[0]);
+    }
+  }, [shelters, selectedShelter]);
 
   // Place Search & Route ETA State
   const [searchedPlace, setSearchedPlace] = useState(null);
   const [activeRouteInfo, setActiveRouteInfo] = useState(null);
 
-  // Extract unique states
-  const availableStates = ['ALL', ...Array.from(new Set(mockShelters.map((s) => s.state || 'Other')))];
+  const activeSheltersList = shelters && shelters.length > 0 ? shelters : mockShelters;
 
-  const filteredShelters = mockShelters.filter((s) => {
+  // Extract unique states
+  const availableStates = ['ALL', ...Array.from(new Set(activeSheltersList.map((s) => s.state || 'Other')))];
+
+  const filteredShelters = activeSheltersList.filter((s) => {
     const matchesSearch =
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (s.district && s.district.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -48,7 +67,8 @@ export default function SheltersPage() {
     return matchesSearch && matchesType && matchesState;
   });
 
-  const totalNationalCapacity = mockShelters.reduce((acc, s) => acc + s.totalCapacity, 0);
+  const totalNationalCapacity = activeSheltersList.reduce((acc, s) => acc + (s.totalCapacity || 0), 0);
+  const totalLiveOccupancy = activeSheltersList.reduce((acc, s) => acc + (s.currentOccupancy || 0), 0);
 
   // Automatically calculate route when a shelter is clicked
   const handleSelectShelterWithRoute = async (shelter) => {
@@ -157,8 +177,8 @@ export default function SheltersPage() {
           </p>
         </div>
 
-        {/* National Stats Badges */}
-        <div className="flex items-center gap-3">
+        {/* National Stats Badges & Add Shelter Action */}
+        <div className="flex flex-wrap items-center gap-3">
           <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-right">
             <div className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400">
               {language === 'hi' ? 'अखिल भारतीय क्षमता' : 'National Capacity'}
@@ -172,9 +192,26 @@ export default function SheltersPage() {
               {language === 'hi' ? 'सक्रिय आश्रय स्थल' : 'Verified Safe Havens'}
             </div>
             <div className="text-lg font-black text-blue-600 dark:text-blue-400 font-mono">
-              {mockShelters.length} {language === 'hi' ? 'केंद्र' : 'Hubs'}
+              {activeSheltersList.length} {language === 'hi' ? 'केंद्र' : 'Hubs'}
             </div>
           </div>
+
+          {/* ADD SAFE HAVEN / RELOCATION HUB BUTTON */}
+          <button
+            type="button"
+            onClick={openAddShelterModal}
+            className="p-3 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs shadow-lg shadow-teal-600/30 flex items-center space-x-2 transition-all hover:scale-105 active:scale-95 border border-teal-400/40"
+            title="Register new Safe Shelter or Relocation Transit Hub">
+            <PlusCircle className="w-5 h-5" />
+            <div className="text-left leading-tight">
+              <div className="text-[10px] uppercase tracking-wider opacity-80 font-mono">
+                {currentUser?.role === 'ADMIN' ? 'SEOC COMMAND' : currentUser?.role === 'STAFF' ? 'NDRF / STAFF' : 'FIELD DISPATCH'}
+              </div>
+              <div className="text-xs font-black">
+                {language === 'hi' ? '+ नया आश्रय / हब जोड़ें' : '+ Add Shelter / Hub'}
+              </div>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -237,10 +274,12 @@ export default function SheltersPage() {
           <span className="font-bold text-slate-400 shrink-0">{language === 'hi' ? 'श्रेणी:' : 'Category:'}</span>
           {[
             { id: 'ALL', label: t('shelters.filterAll', 'All Types') },
+            { id: 'RELOCATION_HUB', label: language === 'hi' ? '🚚 पुनर्वास हब' : '🚚 Relocation Hubs' },
             { id: 'SCHOOL', label: t('shelters.filterSchool', '🏫 Schools') },
             { id: 'HOSPITAL', label: t('shelters.filterHospital', '🏥 Hospitals') },
             { id: 'STADIUM', label: t('shelters.filterStadium', '🏟️ Stadiums') },
-            { id: 'GOVERNMENT_OFFICE', label: t('shelters.filterGovt', '🏛️ Govt Offices') }
+            { id: 'GOVERNMENT_OFFICE', label: t('shelters.filterGovt', '🏛️ Govt Offices') },
+            { id: 'COMMUNITY_HALL', label: language === 'hi' ? '🏢 सामुदायिक केंद्र' : '🏢 Community Halls' }
           ].map((cat) => (
             <button
               key={cat.id}
@@ -512,7 +551,9 @@ export default function SheltersPage() {
                 <div className="flex items-center space-x-1.5">
                   <span className="text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded flex items-center space-x-1">
                     <span>
-                      {shelter.type === 'SCHOOL'
+                      {shelter.type === 'RELOCATION_HUB'
+                        ? language === 'hi' ? '🚚 पुनर्वास हब' : '🚚 Relocation Hub'
+                        : shelter.type === 'SCHOOL'
                         ? language === 'hi' ? '🏫 स्कूल' : '🏫 School'
                         : shelter.type === 'HOSPITAL'
                         ? language === 'hi' ? '🏥 अस्पताल' : '🏥 Hospital'
@@ -520,6 +561,8 @@ export default function SheltersPage() {
                         ? language === 'hi' ? '🏟️ स्टेडियम' : '🏟️ Stadium'
                         : shelter.type === 'GOVERNMENT_OFFICE'
                         ? language === 'hi' ? '🏛️ सरकारी कार्यालय' : '🏛️ Govt Office'
+                        : shelter.type === 'COMMUNITY_HALL'
+                        ? language === 'hi' ? '🏢 सामुदायिक केंद्र' : '🏢 Community Hall'
                         : '🏢 Safe Haven'}
                     </span>
                   </span>
@@ -528,7 +571,7 @@ export default function SheltersPage() {
                   </span>
                 </div>
                 <span className="text-xs font-mono font-black text-emerald-500">
-                  {language === 'hi' ? 'सुरक्षा:' : 'Resilience:'} {shelter.resilienceScore}/100
+                  {language === 'hi' ? 'सुरक्षा:' : 'Resilience:'} {shelter.resilienceScore || 90}/100
                 </span>
               </div>
               <h4 className="text-base font-bold text-slate-900 dark:text-white">{shelter.name}</h4>
@@ -539,20 +582,44 @@ export default function SheltersPage() {
                   <span className="text-slate-400 block text-[10px]">
                     {language === 'hi' ? 'कुल क्षमता' : 'Capacity'}
                   </span>
-                  <span className="font-bold">{shelter.totalCapacity.toLocaleString()}</span>
+                  <span className="font-bold">{(shelter.totalCapacity || 0).toLocaleString()}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[10px]">
                     {language === 'hi' ? 'अधिभोग' : 'Occupancy'}
                   </span>
                   <span className="font-bold text-blue-500">
-                    {shelter.currentOccupancy.toLocaleString()} ({Math.round((shelter.currentOccupancy / shelter.totalCapacity) * 100)}%)
+                    {(shelter.currentOccupancy || 0).toLocaleString()} (
+                    {shelter.totalCapacity ? Math.round(((shelter.currentOccupancy || 0) / shelter.totalCapacity) * 100) : 0}%)
                   </span>
                 </div>
               </div>
             </div>
           ))}
         </div>
+
+        {filteredShelters.length === 0 && (
+          <div className="p-8 glass-panel text-center rounded-2xl space-y-3">
+            <Building2 className="w-10 h-10 text-slate-400 mx-auto opacity-60" />
+            <h4 className="font-bold text-sm text-slate-700 dark:text-slate-300">
+              {language === 'hi'
+                ? 'इस फ़िल्टर या क्षेत्र में कोई सुरक्षित आश्रय नहीं मिला'
+                : 'No safe shelters or relocation hubs found matching this filter.'}
+            </h4>
+            <p className="text-xs text-slate-400 max-w-md mx-auto">
+              {language === 'hi'
+                ? 'राहत दल अथवा प्रशासक इस क्षेत्र के लिए तुरंत एक नया सुरक्षित आश्रय या पारगमन हब पंजीकृत कर सकते हैं।'
+                : 'Authorized Admin or Staff responders can immediately register a new relief shelter or staging hub for this sector.'}
+            </p>
+            <button
+              type="button"
+              onClick={openAddShelterModal}
+              className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition-all shadow-md inline-flex items-center space-x-1.5">
+              <PlusCircle className="w-4 h-4" />
+              <span>{language === 'hi' ? 'नया आश्रय / हब पंजीकृत करें' : 'Register New Shelter / Hub'}</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

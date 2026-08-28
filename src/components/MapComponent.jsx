@@ -41,6 +41,7 @@ const schoolShelterIcon = createCustomIcon('#4F46E5', 'SCH');
 const hospitalShelterIcon = createCustomIcon('#059669', 'HSP');
 const stadiumShelterIcon = createCustomIcon('#D97706', 'STD');
 const govtShelterIcon = createCustomIcon('#2563EB', 'GOV');
+const relocationHubIcon = createCustomIcon('#0D9488', 'HUB', true);
 const defaultShelterIcon = createCustomIcon('#3B82F6', 'SHL');
 const searchedDestinationIcon = createCustomIcon('#2563EB', 'DST', true);
 
@@ -48,7 +49,8 @@ function getShelterIcon(type) {
   if (type === 'SCHOOL') return schoolShelterIcon;
   if (type === 'HOSPITAL') return hospitalShelterIcon;
   if (type === 'STADIUM') return stadiumShelterIcon;
-  if (type === 'GOVERNMENT_OFFICE') return govtShelterIcon;
+  if (type === 'GOVERNMENT_OFFICE' || type === 'GOVT_OFFICE') return govtShelterIcon;
+  if (type === 'RELOCATION_HUB') return relocationHubIcon;
   return defaultShelterIcon;
 }
 

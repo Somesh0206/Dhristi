@@ -13,23 +13,18 @@ import {
   Radio,
   Send,
   AlertOctagon,
-
-
-
   CheckCircle2,
-
-
   MapPin,
-
   Truck,
-
   Navigation,
   Siren,
   Ambulance,
-
-  Check } from
-
-'lucide-react';
+  Check,
+  Building2,
+  PlusCircle,
+  ShieldCheck,
+  Users
+} from 'lucide-react';
 
 export default function AdminPage() {
   const {
@@ -39,6 +34,9 @@ export default function AdminPage() {
     selectedSosForRoute,
     setSelectedSosForRoute,
     openSosModal,
+    shelters,
+    openAddShelterModal,
+    currentUser,
     playSosBeep,
     triggerEvacuationCelebration,
     language,
@@ -107,13 +105,21 @@ export default function AdminPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => openSosModal('responder')}
-          className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold flex items-center space-x-2 shadow transition-all hover:scale-105">
-          
-          <Radio className="w-4 h-4 animate-pulse" />
-          <span>{language === 'hi' ? 'क्षेत्रीय आपदा प्रसारण शुरू करें' : 'Launch Regional Incident Dispatch'}</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={openAddShelterModal}
+            className="px-4 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl text-xs font-bold flex items-center space-x-2 shadow-lg shadow-teal-600/30 transition-all hover:scale-105 border border-teal-400/30">
+            <PlusCircle className="w-4 h-4" />
+            <span>{language === 'hi' ? '+ नया आश्रय / हब पंजीकृत करें' : '+ Add Safe Haven / Hub'}</span>
+          </button>
+
+          <button
+            onClick={() => openSosModal('responder')}
+            className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold flex items-center space-x-2 shadow transition-all hover:scale-105">
+            <Radio className="w-4 h-4 animate-pulse" />
+            <span>{language === 'hi' ? 'क्षेत्रीय आपदा प्रसारण' : 'Launch Regional Incident Dispatch'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Real-time Citizen SOS Triage & Rescue Road Routing */}
@@ -554,6 +560,128 @@ export default function AdminPage() {
               </button>
             </form>
           </div>
+        </div>
+      </div>
+
+      {/* Safe Shelters & Relocation Hubs Management Command */}
+      <div className="glass-panel p-6 rounded-2xl space-y-5 border border-teal-500/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+          <div>
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-teal-500/10 text-teal-600 dark:text-teal-400 rounded-xl border border-teal-500/20">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                {language === 'hi'
+                  ? 'सुरक्षित आश्रय स्थल एवं पुनर्वास हब प्रबंधन'
+                  : 'Safe Shelters & Relocation Staging Hubs Infrastructure'}
+              </h3>
+              <span className="text-xs font-mono font-bold bg-teal-500/10 text-teal-600 dark:text-teal-400 px-2.5 py-0.5 rounded-full border border-teal-500/30">
+                {shelters?.length || 0} ACTIVE HUBS
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              {language === 'hi'
+                ? 'राहत दलों एवं प्रशासन द्वारा पंजीकृत सभी सुरक्षित आश्रयों, पारगमन हबों और वहन क्षमता का वास्तविक समय प्रबंधन।'
+                : 'Real-time structural carrying capacity and operational registry of Pan-India havens and transit staging depots.'}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={openAddShelterModal}
+            className="px-4 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl text-xs font-bold flex items-center space-x-2 shadow-md transition-all hover:scale-105 shrink-0">
+            <PlusCircle className="w-4 h-4" />
+            <span>{language === 'hi' ? '+ नया आश्रय / हब पंजीकृत करें' : '+ Register New Haven / Hub'}</span>
+          </button>
+        </div>
+
+        {/* Aggregate Metrics Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/60">
+            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">
+              {language === 'hi' ? 'कुल वहन क्षमता' : 'Total Bed Capacity'}
+            </span>
+            <span className="text-lg font-black text-slate-900 dark:text-white font-mono">
+              {(shelters || []).reduce((acc, s) => acc + (s.totalCapacity || 0), 0).toLocaleString()}
+            </span>
+          </div>
+
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/60">
+            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">
+              {language === 'hi' ? 'वर्तमान अधिभोग' : 'Live Occupancy'}
+            </span>
+            <span className="text-lg font-black text-blue-600 dark:text-blue-400 font-mono">
+              {(shelters || []).reduce((acc, s) => acc + (s.currentOccupancy || 0), 0).toLocaleString()}
+            </span>
+          </div>
+
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/60">
+            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">
+              {language === 'hi' ? 'शेष सुरक्षित बफर' : 'Available Safety Buffer'}
+            </span>
+            <span className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">
+              {(
+                (shelters || []).reduce((acc, s) => acc + (s.totalCapacity || 0), 0) -
+                (shelters || []).reduce((acc, s) => acc + (s.currentOccupancy || 0), 0)
+              ).toLocaleString()}
+            </span>
+          </div>
+
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/60">
+            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">
+              {language === 'hi' ? 'पुनर्वास पारगमन हब' : 'Relocation Transit Hubs'}
+            </span>
+            <span className="text-lg font-black text-teal-600 dark:text-teal-400 font-mono">
+              {(shelters || []).filter((s) => s.type === 'RELOCATION_HUB').length}
+            </span>
+          </div>
+        </div>
+
+        {/* Shelters & Relocation Hubs Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[340px] overflow-y-auto pr-1">
+          {(shelters || []).map((shelter) => (
+            <div
+              key={shelter.id}
+              className="p-3.5 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/70 shadow-sm space-y-2">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-[9px] font-bold uppercase font-mono px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-600 dark:text-teal-400">
+                    {shelter.type === 'RELOCATION_HUB' ? '🚚 RELOCATION HUB' : shelter.type}
+                  </span>
+                  <span className="text-[9px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded">
+                    {shelter.state}
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono text-emerald-500 font-bold">
+                  ★ {shelter.resilienceScore || 90}/100
+                </span>
+              </div>
+
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate" title={shelter.name}>
+                {shelter.name}
+              </h4>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                📍 {shelter.address}
+              </p>
+
+              <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-100 dark:border-slate-700/60">
+                <span className="text-slate-400">
+                  Cap: <strong className="text-slate-700 dark:text-slate-200">{shelter.totalCapacity}</strong>
+                </span>
+                <span className="text-blue-500 font-bold font-mono">
+                  {shelter.currentOccupancy} Occ ({Math.round(((shelter.currentOccupancy || 0) / (shelter.totalCapacity || 1)) * 100)}%)
+                </span>
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${shelter.coordinates[0]},${shelter.coordinates[1]}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-teal-500 font-bold hover:underline">
+                  GPS Nav ↗
+                </a>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>);

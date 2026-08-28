@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import confetti from 'canvas-confetti';
 
 import { initialCitizenSosBeacons } from '@/data/sosData';
+import { mockShelters } from '@/data/sheltersData';
 
 import { getTranslation } from '@/i18n/translations';
 
@@ -129,6 +130,8 @@ export function AppProvider({ children }) {
   const [isSosModalOpen, setIsSosModalOpen] = useState(false);
   const [sosModalTab, setSosModalTab] = useState('citizen');
   const [sosAlerts, setSosAlerts] = useState(initialCitizenSosBeacons);
+  const [shelters, setShelters] = useState(mockShelters);
+  const [isAddShelterModalOpen, setIsAddShelterModalOpen] = useState(false);
   const [selectedSosForRoute, setSelectedSosForRoute] = useState(initialCitizenSosBeacons[0]);
   const [incidentReports, setIncidentReports] = useState([]);
   const [userCoordinates, setUserCoordinates] = useState([11.551, 76.1305]);
@@ -208,16 +211,18 @@ export function AppProvider({ children }) {
     setIsAuthModalOpen(true);
   };
 
-  // Fetch initial SOS alerts and Incidents from backend API
+  // Fetch initial SOS alerts, Incidents, and Shelters from backend API
   const fetchBackendData = useCallback(async () => {
     try {
-      const [sosRes, incRes] = await Promise.all([
-      fetch('/api/sos').then((r) => r.json()),
-      fetch('/api/incidents').then((r) => r.json())]
-      );
+      const [sosRes, incRes, shelterRes] = await Promise.all([
+        fetch('/api/sos').then((r) => r.json()),
+        fetch('/api/incidents').then((r) => r.json()),
+        fetch('/api/shelters').then((r) => r.json())
+      ]);
 
-      if (sosRes.success) setSosAlerts(sosRes.alerts);
-      if (incRes.success) setIncidentReports(incRes.reports);
+      if (sosRes.success && Array.isArray(sosRes.alerts)) setSosAlerts(sosRes.alerts);
+      if (incRes.success && Array.isArray(incRes.reports)) setIncidentReports(incRes.reports);
+      if (shelterRes.success && Array.isArray(shelterRes.shelters)) setShelters(shelterRes.shelters);
     } catch {
       console.warn('Backend API initial fetch fallback to local store');
     }
@@ -287,6 +292,55 @@ export function AppProvider({ children }) {
   const closeSosModal = () => {
     setIsSosModalOpen(false);
     setIsPoliceModalOpen(false);
+  };
+
+  const openAddShelterModal = () => setIsAddShelterModalOpen(true);
+  const closeAddShelterModal = () => setIsAddShelterModalOpen(false);
+
+  const addSafeShelter = async (shelterData) => {
+    try {
+      const payload = {
+        ...shelterData,
+        addedByRole: currentUser?.role || 'STAFF',
+        addedByName: currentUser?.name || 'Authorized Officer'
+      };
+
+      const res = await fetch('/api/shelters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success && data.shelter) {
+        setShelters((prev) => [data.shelter, ...prev]);
+        triggerEvacuationCelebration();
+        playSosBeep();
+        return { success: true, shelter: data.shelter };
+      }
+      return { success: false, error: data.error || 'Failed to create shelter' };
+    } catch (err) {
+      console.error('Failed to add shelter:', err);
+      // Offline local fallback
+      const fallback = {
+        ...shelterData,
+        id: `HUB-${Date.now().toString().slice(-4)}`,
+        totalCapacity: parseInt(shelterData.totalCapacity, 10) || 500,
+        currentOccupancy: parseInt(shelterData.currentOccupancy, 10) || 0,
+        allocatedOccupancy: parseInt(shelterData.currentOccupancy, 10) || 0,
+        status: 'OPTIMAL',
+        resilienceScore: 90,
+        facilities: shelterData.facilities || [
+          '24x7 Emergency Power & Solar Backup Grid',
+          'Safe Drinking Water Purification Point',
+          'Community Kitchen & Food Ration Depot',
+          'First-Aid & Trauma Triage Station',
+          'Rapid Relocation & Evacuation Transit Hub'
+        ]
+      };
+      setShelters((prev) => [fallback, ...prev]);
+      triggerEvacuationCelebration();
+      return { success: true, shelter: fallback };
+    }
   };
 
   const addSosAlert = async (alert) => {
@@ -520,6 +574,13 @@ export function AppProvider({ children }) {
         addSosAlert,
         updateSosStatus,
         dispatchRescueTeam,
+        shelters,
+        setShelters,
+        addSafeShelter,
+        isAddShelterModalOpen,
+        setIsAddShelterModalOpen,
+        openAddShelterModal,
+        closeAddShelterModal,
         selectedSosForRoute,
         setSelectedSosForRoute,
         incidentReports,

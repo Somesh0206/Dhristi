@@ -22,7 +22,8 @@ import {
   Loader2,
   Sparkles,
   Mountain,
-  Car
+  Car,
+  PlusCircle
 } from 'lucide-react';
 import AudioVoiceAdvisor from '@/components/AudioVoiceAdvisor';
 
@@ -53,12 +54,16 @@ function RelocationContent() {
     locationError,
     openSosModal,
     triggerEvacuationCelebration,
+    shelters,
+    openAddShelterModal,
+    currentUser,
     language,
     t
   } = useApp();
 
+  const activeShelters = shelters && shelters.length > 0 ? shelters : mockShelters;
   const [selectedHabitation, setSelectedHabitation] = useState(null);
-  const [nearestShelter, setNearestShelter] = useState(mockShelters[0]);
+  const [nearestShelter, setNearestShelter] = useState(activeShelters[0]);
   const [evacueeCount, setEvacueeCount] = useState(1);
   const [evacuationMode, setEvacuationMode] = useState('vehicle');
   const [hasCompletedEvacuation, setHasCompletedEvacuation] = useState(false);
@@ -85,10 +90,10 @@ function RelocationContent() {
 
   // Compute nearest shelter whenever user coordinates change & query OSRM + Nominatim
   useEffect(() => {
-    let closest = mockShelters[0];
+    let closest = activeShelters[0];
     let minDistance = Infinity;
 
-    mockShelters.forEach((shelter) => {
+    activeShelters.forEach((shelter) => {
       const dist = calculateDistanceKm(
         userCoordinates[0],
         userCoordinates[1],
@@ -179,7 +184,7 @@ function RelocationContent() {
     setRoutingSteps(routeInfo.steps || []);
 
     // Check if matched a shelter
-    const matched = mockShelters.find(
+    const matched = activeShelters.find(
       (s) =>
         Math.hypot(
           s.coordinates[0] - routeInfo.destinationCoordinates[0],
@@ -225,8 +230,17 @@ function RelocationContent() {
           </p>
         </div>
 
-        {/* Action Buttons: Voice Advisor + GPS Locate */}
+        {/* Action Buttons: Voice Advisor + GPS Locate + Register Hub */}
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={openAddShelterModal}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-lg shadow-teal-600/20 transition-all hover:scale-105"
+            title="Register new transit relocation hub">
+            <PlusCircle className="w-4 h-4" />
+            <span>{language === 'hi' ? '+ पुनर्वास हब जोड़ें' : '+ Add Staging Hub'}</span>
+          </button>
+
           <AudioVoiceAdvisor
             textToSpeak={voiceInstruction}
             label={language === 'hi' ? 'आपातकालीन मार्ग निर्देश सुनें' : 'Listen to Voice Navigation'}

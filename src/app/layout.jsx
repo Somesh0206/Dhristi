@@ -7,6 +7,7 @@ import SosModal from '@/components/SosModal';
 import EntryAuthModal from '@/components/EntryAuthModal';
 import PoliceEmergencyModal from '@/components/PoliceEmergencyModal';
 import VoiceAssistant from '@/components/VoiceAssistant';
+import AddShelterModal from '@/components/AddShelterModal';
 
 export const metadata = {
   title: 'Dhristi - Smart Geo-Intelligence for Vulnerable Habitations',
@@ -48,6 +49,7 @@ export default function RootLayout({
           <PoliceEmergencyModal />
           <VoiceAssistant />
           <EntryAuthModal />
+          <AddShelterModal />
         </AppProvider>
       </body>
     </html>);

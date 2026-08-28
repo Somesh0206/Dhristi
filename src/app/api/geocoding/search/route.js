@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { mockShelters } from '@/data/sheltersData';
+import { backendStore } from '@/lib/backendStore';
 import { mockHabitations, mockHazardZones } from '@/data/zonesData';
 import { mockPoliceStations } from '@/data/policeData';
 
@@ -46,8 +46,8 @@ export async function GET(request) {
   const qLower = query.toLowerCase();
   const matchedResults = [];
 
-  // 1. Search in local Shelters
-  mockShelters.forEach((shelter) => {
+  // 1. Search in local Shelters & Relocation Hubs
+  (backendStore.shelters || []).forEach((shelter) => {
     if (
       shelter.name.toLowerCase().includes(qLower) ||
       shelter.address.toLowerCase().includes(qLower) ||

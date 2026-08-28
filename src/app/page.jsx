@@ -34,19 +34,21 @@ export default function HomePage() {
     isLiveTelemetrySimulation,
     toggleTelemetrySimulation,
     activeAlertCount,
+    shelters,
     language,
     t
   } = useApp();
 
+  const activeShelters = shelters && shelters.length > 0 ? shelters : mockShelters;
   const redZonesCount = mockHazardZones.filter((z) => z.riskLevel === 'RED').length;
   const criticalHabitations = mockHabitations.filter((h) => h.immediateRelocationNeeded);
   const totalPopulationAtRisk = mockHabitations.
   filter((h) => h.riskLevel === 'RED').
   reduce((acc, curr) => acc + curr.population, 0);
 
-  const totalSafeCapacity = mockShelters.reduce((acc, curr) => acc + curr.totalCapacity, 0);
-  const totalAllocatedOccupancy = mockShelters.reduce((acc, curr) => acc + curr.allocatedOccupancy, 0);
-  const remainingSafeCapacity = totalSafeCapacity - totalAllocatedOccupancy;
+  const totalSafeCapacity = activeShelters.reduce((acc, curr) => acc + (curr.totalCapacity || 0), 0);
+  const totalAllocatedOccupancy = activeShelters.reduce((acc, curr) => acc + (curr.allocatedOccupancy || curr.currentOccupancy || 0), 0);
+  const remainingSafeCapacity = Math.max(0, totalSafeCapacity - totalAllocatedOccupancy);
 
   const handleExportDataReport = () => {
     const reportData = {
