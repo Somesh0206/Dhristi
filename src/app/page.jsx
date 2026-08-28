@@ -139,10 +139,10 @@ export default function HomePage() {
                 <button
                   onClick={handleExportDataReport}
                   className="px-3.5 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-300 dark:border-slate-700 flex items-center space-x-1.5 transition-colors"
-                  title="Export Intelligence Report (JSON)">
+                  title="Export Official PDF Usage & Operations Report (Admin / Staff Clearance)">
                   
-                  <Download className="w-4 h-4" />
-                  <span>{language === 'hi' ? 'रिपोर्ट डाउनलोड' : 'Export Report'}</span>
+                  <Download className="w-4 h-4 text-red-500" />
+                  <span>{language === 'hi' ? 'पीडीएफ रिपोर्ट निर्यात' : 'Export Report (PDF)'}</span>
                 </button>
               </div>
             </div>

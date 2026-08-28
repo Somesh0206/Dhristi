@@ -244,8 +244,8 @@ class BackendStore {
       generatedBy: 'Dr. Rajesh Kumar (SEOC Director)',
       generatedByRole: 'ADMIN',
       title: 'DISHA National Operations & User Function Telemetry Report',
-      format: 'JSON + CSV + MD',
-      summary: 'Comprehensive audit of 9 active response functions across 650+ citizen sessions and 14 emergency dispatches.',
+      format: 'PDF + JSON + CSV',
+      summary: 'Comprehensive official PDF audit of 9 active response functions across 650+ citizen sessions and 14 emergency dispatches.',
       stats: {
         totalEventsTracked: 9,
         uniqueUsers: 6,

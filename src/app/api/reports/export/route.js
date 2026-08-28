@@ -20,8 +20,20 @@ export async function POST(request) {
   try {
     const body = await request.json().catch(() => ({}));
     const operatorName = body.operatorName || 'Dr. Rajesh Kumar (SEOC Director)';
-    const operatorRole = body.operatorRole || 'ADMIN';
+    const operatorRole = (body.operatorRole || 'ADMIN').toUpperCase();
     const notes = body.notes || 'Routine disaster management telemetry and platform audit.';
+    const requestedFormat = (body.format || 'PDF').toUpperCase();
+
+    // Security Clearance Check: ONLY Admin or Staff can generate / download usage reports
+    if (operatorRole !== 'ADMIN' && operatorRole !== 'STAFF') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Access Denied: Only SEOC Administrators and Disaster Relief Staff are authorized to export platform usage and telemetry reports.'
+        },
+        { status: 403 }
+      );
+    }
 
     // Generate comprehensive usage analysis
     const logs = [...backendStore.usageLogs];
@@ -128,9 +140,9 @@ ${notes}
     const savedRecord = backendStore.createExportReport({
       generatedBy: operatorName,
       generatedByRole: operatorRole,
-      title: `DISHA User Operations Audit [${new Date().toISOString().slice(0, 10)}]`,
-      format: 'JSON + CSV + MD',
-      summary: `Export of ${logs.length} events across ${userSummaryList.length} distinct users and ${Object.keys(functionUsageCounts).length} functions.`,
+      title: `DISHA User Operations Audit (${requestedFormat}) [${new Date().toISOString().slice(0, 10)}]`,
+      format: requestedFormat,
+      summary: `Export of ${logs.length} events across ${userSummaryList.length} distinct users and ${Object.keys(functionUsageCounts).length} functions as ${requestedFormat}.`,
       stats: {
         totalEventsTracked: logs.length,
         uniqueUsers: userSummaryList.length,
