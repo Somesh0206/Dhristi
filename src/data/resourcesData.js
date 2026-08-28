@@ -32,7 +32,7 @@ export const mockEmergencyGuides = [
     after: [
     'Stay clear of slide areas; secondary landslides often follow initial collapses.',
     'Check for injured or trapped persons without entering direct hazard zones.',
-    'Listen to Dhristi SOS broadcasts and authorized radios for safe shelter status.']
+    'Listen to DISHA SOS broadcasts and authorized radios for safe shelter status.']
 
   }
 },
@@ -44,7 +44,7 @@ export const mockEmergencyGuides = [
   criticalHelpline: '1070 (State Emergency Operations)',
   phases: {
     before: [
-    'Monitor river gauge warnings and rainfall intensity gauges on Dhristi portal.',
+    'Monitor river gauge warnings and rainfall intensity gauges on DISHA portal.',
     'Turn off main electrical breaker and gas cylinders before water enters residence.',
     'Elevate valuables, livestock, and critical supplies to upper floors or designated flood platforms.'],
 
@@ -80,7 +80,7 @@ export const mockEmergencyGuides = [
     after: [
     'Expect aftershocks. Inspect structures for severe wall/foundation fractures before re-entry.',
     'Check for gas leaks: if you smell gas or hear hissing, evacuate immediately and notify fire dispatch.',
-    'Broadcast your location via Dhristi Citizen SOS if trapped.']
+    'Broadcast your location via DISHA Citizen SOS if trapped.']
 
   }
 },

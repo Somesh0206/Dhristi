@@ -10,11 +10,11 @@ import VoiceAssistant from '@/components/VoiceAssistant';
 import AddShelterModal from '@/components/AddShelterModal';
 
 export const metadata = {
-  title: 'Dhristi - Smart Geo-Intelligence for Vulnerable Habitations',
+  title: 'DISHA - Smart Geo-Intelligence for Vulnerable Habitations',
   description:
-  'Dhristi - Mapping Risk, Protecting Lives: Intelligent Identification of Hazard-Based Red Zones, Carrying Capacity Assessment, and Immediate Relocation Needs for Vulnerable Habitations.',
+  'DISHA - Mapping Risk, Protecting Lives: Intelligent Identification of Hazard-Based Red Zones, Carrying Capacity Assessment, and Immediate Relocation Needs for Vulnerable Habitations.',
   keywords: [
-  'Dhristi',
+  'DISHA',
   'Disaster Management',
   'Hazard Red Zones',
   'Carrying Capacity',
@@ -25,7 +25,7 @@ export const metadata = {
   'SOS Emergency',
   'Voice Assistant'],
 
-  authors: [{ name: 'Dhristi Team' }]
+  authors: [{ name: 'DISHA Team' }]
 };
 
 export const viewport = {

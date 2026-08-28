@@ -46,7 +46,7 @@ export default function Footer() {
                 <ShieldAlert className="w-5 h-5" />
               </div>
               <span className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white">
-                {language === 'hi' ? 'दृष्टि (DHRISTI)' : 'DHRISTI'}
+                {language === 'hi' ? 'दिशा (DISHA)' : 'DISHA'}
               </span>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-300 max-w-md leading-relaxed font-medium">
@@ -138,8 +138,8 @@ export default function Footer() {
           <div>
             © {new Date().getFullYear()}{' '}
             {language === 'hi' ?
-            'दृष्टि भू-स्थानिक आपदा प्रबंधन मंच। मानवीय आपदा लचीलेपन के लिए निर्मित।' :
-            'Dhristi Geo-Intelligence Platform. Built for Humanitarian Disaster Resilience.'}
+            'दिशा भू-स्थानिक आपदा प्रबंधन मंच (DISHA)। मानवीय आपदा लचीलेपन के लिए निर्मित।' :
+            'DISHA Geo-Intelligence Platform. Built for Humanitarian Disaster Resilience.'}
           </div>
           <div className="flex items-center space-x-4">
             <span className="inline-flex items-center space-x-1">

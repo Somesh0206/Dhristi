@@ -29,7 +29,7 @@ export default function EntryAuthModal() {
 
   const [selectedRole, setSelectedRole] = useState('ADMIN');
   const [nameInput, setNameInput] = useState('Dr. Rajesh Kumar');
-  const [emailInput, setEmailInput] = useState('admin.seoc@dhristi.gov.in');
+  const [emailInput, setEmailInput] = useState('admin.seoc@disha.gov.in');
   const [passwordInput, setPasswordInput] = useState('••••••••••••');
   const [departmentInput, setDepartmentInput] = useState(
     'State Emergency Operations Centre (SEOC)'
@@ -46,15 +46,15 @@ export default function EntryAuthModal() {
     setSelectedRole(role);
     if (role === 'ADMIN') {
       setNameInput(language === 'hi' ? 'डॉ. राजेश कुमार (निदेशक, SEOC)' : 'Dr. Rajesh Kumar (SEOC Director)');
-      setEmailInput('admin.seoc@dhristi.gov.in');
+      setEmailInput('admin.seoc@disha.gov.in');
       setDepartmentInput('State Emergency Operations Centre (SEOC)');
     } else if (role === 'STAFF') {
       setNameInput(language === 'hi' ? 'कैप्टन अनन्य अय्यर (एनडीआरएफ राहत कमान)' : 'Capt. Ananya Iyer (NDRF Ops)');
-      setEmailInput('staff.ndrf@dhristi.gov.in');
+      setEmailInput('staff.ndrf@disha.gov.in');
       setDepartmentInput('NDRF 10th Battalion Relief Command');
     } else {
       setNameInput(language === 'hi' ? 'नागरिक / आम जनता' : 'Citizen Guest Observer');
-      setEmailInput('citizen@dhristi.in');
+      setEmailInput('citizen@disha.in');
       setDepartmentInput('General Public & Community Shelter Access');
     }
   };
@@ -68,7 +68,7 @@ export default function EntryAuthModal() {
     loginAs(
       'CITIZEN',
       language === 'hi' ? 'नागरिक दर्शक' : 'Citizen Guest Observer',
-      'citizen@dhristi.in',
+      'citizen@disha.in',
       language === 'hi' ? 'जनसामान्य' : 'General Public'
     );
   };
@@ -103,7 +103,7 @@ export default function EntryAuthModal() {
           <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md mx-auto flex items-center justify-center mb-2 shadow-inner">
             <ShieldAlert className="w-7 h-7 text-white animate-pulse" />
           </div>
-          <h2 className="text-xl font-black tracking-wide">{t('auth.title', 'DHRISTI GEO-INTELLIGENCE')}</h2>
+          <h2 className="text-xl font-black tracking-wide">{t('auth.title', 'DISHA GEO-INTELLIGENCE')}</h2>
           <p className="text-xs text-red-100 mt-1">
             {t('auth.subtitle', 'National Disaster Red-Zone & Relief Command Gateway')}
           </p>

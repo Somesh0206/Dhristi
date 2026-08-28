@@ -265,7 +265,7 @@ export default function ResourcesPage() {
             <div className="flex items-center space-x-2">
               <ShieldCheck className="w-5 h-5 text-amber-500" />
               <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                {language === 'hi' ? 'दृष्टि आपातकालीन पॉकेट कार्ड' : 'Dhristi Emergency Pocket Card'}
+                {language === 'hi' ? 'दिशा (DISHA) आपातकालीन पॉकेट कार्ड' : 'DISHA Emergency Pocket Card'}
               </h3>
             </div>
             <span className="text-[10px] font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded font-bold">

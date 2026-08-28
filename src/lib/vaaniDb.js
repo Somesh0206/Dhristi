@@ -20,7 +20,7 @@ let memoryStore = [
 {
   id: 'vaani-seed-1',
   sender: 'assistant',
-  text: 'Namaste! I am Dhristi AI Voice Assistant (Vaani). I can help you find safe shelters, check hazard red-zones, guide evacuation routes, check weather, or trigger emergency SOS.',
+  text: 'Namaste! I am DISHA AI Voice Assistant (Vaani). I can help you find safe shelters, check hazard red-zones, guide evacuation routes, check weather, or trigger emergency SOS.',
   time: '12:00 AM',
   timestamp: Date.now() - 3600000,
   language: 'en'

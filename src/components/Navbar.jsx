@@ -146,7 +146,7 @@ export default function Navbar() {
             <div className="flex flex-col">
               <div className="flex items-center space-x-1.5">
                 <span className="font-black text-lg tracking-tight text-slate-900 dark:text-white group-hover:text-red-500 transition-colors">
-                  {language === 'hi' ? 'दृष्टि (DHRISTI)' : 'DHRISTI'}
+                  {language === 'hi' ? 'दिशा (DISHA)' : 'DISHA'}
                 </span>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20 uppercase tracking-wider">
                   Geo-Intel
@@ -196,7 +196,7 @@ export default function Navbar() {
             <button
               onClick={openVoiceAssistant}
               className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 text-white shadow-md shadow-purple-600/20 transition-all hover:scale-105"
-              title="Open Dhristi AI Voice Assistant (VAANI)">
+              title="Open DISHA AI Voice Assistant (VAANI)">
               
               <Mic className="w-3.5 h-3.5 animate-pulse" />
               <span className="hidden sm:inline">{language === 'hi' ? 'वाणी AI' : 'Vaani AI'}</span>

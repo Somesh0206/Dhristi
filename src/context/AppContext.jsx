@@ -156,7 +156,7 @@ export function AppProvider({ children }) {
   const setLanguage = useCallback((lang) => {
     setLanguageState(lang);
     try {
-      localStorage.setItem('dhristi_lang', lang);
+      localStorage.setItem('disha_lang', lang);
     } catch {}
   }, []);
 
@@ -170,19 +170,45 @@ export function AppProvider({ children }) {
   // Load language preference from localStorage
   useEffect(() => {
     try {
-      const savedLang = localStorage.getItem('dhristi_lang');
+      const savedLang = localStorage.getItem('disha_lang') || localStorage.getItem('dhristi_lang');
       if (savedLang === 'en' || savedLang === 'hi') {
         setLanguageState(savedLang);
       }
     } catch {}
   }, []);
 
+  // Usage Telemetry Logging function
+  const logUserActivity = useCallback(async (action, functionName, metadata = {}) => {
+    try {
+      await fetch('/api/reports/usage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser?.badgeNumber || currentUser?.email || 'GUEST-SESSION',
+          userName: currentUser?.name || 'Citizen Guest',
+          userRole: currentUser?.role || 'CITIZEN',
+          action,
+          functionName,
+          metadata: {
+            ...metadata,
+            pathname: typeof window !== 'undefined' ? window.location.pathname : '/',
+            timestamp: new Date().toISOString()
+          }
+        })
+      });
+    } catch {
+      // offline continue
+    }
+  }, [currentUser]);
+
   // Trigger login modal on initial site entry if not already logged in
   useEffect(() => {
-    const savedUser = sessionStorage.getItem('dhristi_user');
+    const savedUser = sessionStorage.getItem('disha_user') || sessionStorage.getItem('dhristi_user');
     if (savedUser) {
       try {
-        setCurrentUser(JSON.parse(savedUser));
+        const parsed = JSON.parse(savedUser);
+        setCurrentUser(parsed);
+        logUserActivity('SESSION_RESTORED', 'AutoAuth', { role: parsed.role, name: parsed.name });
       } catch {
         setIsAuthModalOpen(true);
       }
@@ -196,17 +222,20 @@ export function AppProvider({ children }) {
     const userObj = {
       name: name || (role === 'ADMIN' ? 'Dr. Rajesh Kumar (SEOC Director)' : role === 'STAFF' ? 'Capt. Ananya Iyer (NDRF Ops)' : 'Citizen Observer'),
       role,
-      email: email || (role === 'ADMIN' ? 'admin.seoc@dhristi.gov.in' : role === 'STAFF' ? 'staff.ndrf@dhristi.gov.in' : 'citizen@dhristi.in'),
+      email: email || (role === 'ADMIN' ? 'admin.seoc@disha.gov.in' : role === 'STAFF' ? 'staff.ndrf@disha.gov.in' : 'citizen@disha.in'),
       department: department || (role === 'ADMIN' ? 'State Emergency Operations Centre (SEOC)' : role === 'STAFF' ? 'NDRF 10th Battalion Relief Command' : 'General Public'),
       badgeNumber: role !== 'CITIZEN' ? `IN-${Math.floor(1000 + Math.random() * 9000)}` : undefined
     };
     setCurrentUser(userObj);
-    sessionStorage.setItem('dhristi_user', JSON.stringify(userObj));
+    sessionStorage.setItem('disha_user', JSON.stringify(userObj));
     setIsAuthModalOpen(false);
+    logUserActivity('USER_LOGIN', 'ClearanceRoleAuthentication', { role, name: userObj.name, email: userObj.email, department: userObj.department });
   };
 
   const logout = () => {
+    logUserActivity('USER_LOGOUT', 'ClearanceRoleTermination', { previousRole: currentUser?.role });
     setCurrentUser(null);
+    sessionStorage.removeItem('disha_user');
     sessionStorage.removeItem('dhristi_user');
     setIsAuthModalOpen(true);
   };
@@ -602,7 +631,8 @@ export function AppProvider({ children }) {
         setSelectedHazard,
         selectedRisk,
         setSelectedRisk,
-        activeAlertCount
+        activeAlertCount,
+        logUserActivity
       }}>
       
       {children}

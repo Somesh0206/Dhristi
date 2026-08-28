@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import {
@@ -26,6 +26,7 @@ import { mockHabitations, mockHazardZones } from '@/data/zonesData';
 import { mockShelters } from '@/data/sheltersData';
 import RadarScanner from '@/components/RadarScanner';
 import AudioVoiceAdvisor from '@/components/AudioVoiceAdvisor';
+import ExportReportModal from '@/components/ExportReportModal';
 
 export default function HomePage() {
   const {
@@ -35,9 +36,12 @@ export default function HomePage() {
     toggleTelemetrySimulation,
     activeAlertCount,
     shelters,
+    logUserActivity,
     language,
     t
   } = useApp();
+
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const activeShelters = shelters && shelters.length > 0 ? shelters : mockShelters;
   const redZonesCount = mockHazardZones.filter((z) => z.riskLevel === 'RED').length;
@@ -51,32 +55,17 @@ export default function HomePage() {
   const remainingSafeCapacity = Math.max(0, totalSafeCapacity - totalAllocatedOccupancy);
 
   const handleExportDataReport = () => {
-    const reportData = {
-      platform: 'Dhristi Geo-Intelligence Platform',
-      generatedAt: new Date().toISOString(),
-      systemStatus: 'ONLINE_ACTIVE',
-      kpis: {
-        activeRedZones: redZonesCount,
-        criticalHabitations: criticalHabitations.length,
-        populationInRedZones: totalPopulationAtRisk,
-        availableSafeCapacity: remainingSafeCapacity
-      },
-      liveSensorTelemetry: simulatedTelemetry,
-      activeRedZones: mockHazardZones.filter((z) => z.riskLevel === 'RED'),
-      criticalHabitations: criticalHabitations,
-      safeSheltersOverview: mockShelters
-    };
-
-    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `dhristi-disaster-intelligence-report-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
+    if (logUserActivity) {
+      logUserActivity('EXPORT_REPORT_TRIGGERED', 'UsageAndOperationsReportExport', { source: 'HomePageHero' });
+    }
+    setIsExportModalOpen(true);
   };
 
   return (
     <div className="space-y-10 pb-16">
+      {/* Export Report Center Modal */}
+      <ExportReportModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} />
+
       {/* Hero Section with Glassmorphism & Radar Visuals */}
       <section className="relative overflow-hidden bg-gradient-to-b from-red-950/20 via-slate-900/40 to-transparent pt-10 pb-12 px-4 sm:px-6 lg:px-8 border-b border-slate-200/80 dark:border-slate-800/80">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
@@ -97,8 +86,8 @@ export default function HomePage() {
             <AudioVoiceAdvisor
               textToSpeak={
               language === 'hi' ?
-              'सभी नागरिकों का ध्यान दें। यह दृष्टि भू-स्थानिक सुरक्षा प्रणाली का आधिकारिक आपातकालीन बुलेटिन है। वायनाड और चमोली सेक्टरों में भारी मलबा बहाव और बाढ़ की चेतावनी सक्रिय है। कृपया तुरंत अपने आवंटित सुरक्षित आश्रय की जांच करें।' :
-              'Attention all residents. This is an official emergency bulletin from Dhristi Geo-Intelligence. Critical debris flow and flood warnings are active in the Wayanad and Chamoli sectors. 38 habitations are under mandatory evacuation. Please check your assigned safe shelter immediately.'
+              'सभी नागरिकों का ध्यान दें। यह दिशा (DISHA) भू-स्थानिक सुरक्षा प्रणाली का आधिकारिक आपातकालीन बुलेटिन है। वायनाड और चमोली सेक्टरों में भारी मलबा बहाव और बाढ़ की चेतावनी सक्रिय है। कृपया तुरंत अपने आवंटित सुरक्षित आश्रय की जांच करें।' :
+              'Attention all residents. This is an official emergency bulletin from DISHA Geo-Intelligence. Critical debris flow and flood warnings are active in the Wayanad and Chamoli sectors. 38 habitations are under mandatory evacuation. Please check your assigned safe shelter immediately.'
               }
               label={language === 'hi' ? 'आपातकालीन ऑडियो प्रसारण सुनें' : 'Listen to Audio Emergency Broadcast'} />
             

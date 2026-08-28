@@ -83,8 +83,8 @@ export default function VoiceAssistant() {
             sender: 'assistant',
             text:
             language === 'hi' ?
-            'नमस्ते! मैं दृष्टि एआई वॉयस असिस्टेंट (वाणी) हूँ। आप मुझसे निकटतम सुरक्षित आश्रय, भूस्खलन रेड-ज़ोन, निकासी मार्ग, मौसम, सुरक्षित चैट या आपातकालीन SOS के बारे में पूछ सकते हैं।' :
-            'Namaste! I am Dhristi AI Voice Assistant (Vaani). You can ask me to find nearest safe shelters, inspect hazard red-zones, guide evacuation road routes, check weather, open encrypted staff chat, or trigger emergency SOS.',
+            'नमस्ते! मैं दिशा (DISHA) एआई वॉयस असिस्टेंट (वाणी) हूँ। आप मुझसे निकटतम सुरक्षित आश्रय, भूस्खलन रेड-ज़ोन, निकासी मार्ग, मौसम, सुरक्षित चैट या आपातकालीन SOS के बारे में पूछ सकते हैं।' :
+            'Namaste! I am DISHA AI Voice Assistant (Vaani). You can ask me to find nearest safe shelters, inspect hazard red-zones, guide evacuation road routes, check weather, open encrypted staff chat, or trigger emergency SOS.',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           };
           setMessages([initialGreeting]);
@@ -504,7 +504,7 @@ export default function VoiceAssistant() {
         <button
           onClick={openVoiceAssistant}
           className="group relative flex items-center space-x-2.5 px-4 py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 text-white rounded-full shadow-2xl shadow-purple-500/40 border border-purple-400/40 transition-all hover:scale-105 active:scale-95 animate-bounce-subtle"
-          title="Open Dhristi AI Voice Assistant (VAANI)">
+          title="Open DISHA AI Voice Assistant (VAANI)">
           
           <span className="relative flex h-3 w-3">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
@@ -552,7 +552,7 @@ export default function VoiceAssistant() {
             <div>
               <div className="flex items-center space-x-2">
                 <h2 className="text-lg font-black tracking-wide">
-                  {language === 'hi' ? 'दृष्टि एआई वॉयस असिस्टेंट (वाणी)' : 'DHRISTI AI VOICE ASSISTANT (VAANI)'}
+                  {language === 'hi' ? 'दिशा (DISHA) एआई वॉयस असिस्टेंट (वाणी)' : 'DISHA AI VOICE ASSISTANT (VAANI)'}
                 </h2>
                 <span className="text-[10px] bg-purple-950/70 text-purple-200 px-2 py-0.5 rounded-full border border-purple-400/40 font-bold flex items-center space-x-1">
                   <span>🎙️ BILINGUAL AI</span>

@@ -3,7 +3,7 @@
 export const translations = {
   en: {
     // Brand & Header
-    'brand.name': 'DHRISTI',
+    'brand.name': 'DISHA',
     'brand.tagline': 'National Disaster Red-Zone & Relief Command',
     'nav.home': 'Overview',
     'nav.redZones': 'Red Zones',
@@ -18,7 +18,7 @@ export const translations = {
     'nav.language': 'Language',
 
     // Role & Login Modal
-    'auth.title': 'DHRISTI GEO-INTELLIGENCE',
+    'auth.title': 'DISHA GEO-INTELLIGENCE',
     'auth.subtitle': 'National Disaster Red-Zone & Relief Command Gateway',
     'auth.selectRole': 'Select Operational Clearance Role',
     'auth.chooseLanguage': 'Choose Preferred Language / भाषा चुनें',
@@ -110,7 +110,7 @@ export const translations = {
     'police.subtitle': 'Rapid one-tap calling for Police, NDRF, SDRF, Disaster Control, and Medical Emergencies',
 
     // Voice Assistant
-    'voice.title': 'Dhristi AI Voice Assistant (Vaani)',
+    'voice.title': 'DISHA AI Voice Assistant (Vaani)',
     'voice.subtitle': 'Bilingual Voice Intelligence for Disaster Early Warning & Rapid Relief',
     'voice.listening': 'Listening to your voice...',
     'voice.speakNow': 'Tap Microphone & Speak',
@@ -128,7 +128,7 @@ export const translations = {
   },
   hi: {
     // Brand & Header
-    'brand.name': 'दृष्टि (DHRISTI)',
+    'brand.name': 'दिशा (DISHA)',
     'brand.tagline': 'राष्ट्रीय आपदा रेड-ज़ोन एवं राहत कमान केंद्र',
     'nav.home': 'अवलोकन',
     'nav.redZones': 'रेड ज़ोन',
@@ -143,7 +143,7 @@ export const translations = {
     'nav.language': 'भाषा (Language)',
 
     // Role & Login Modal
-    'auth.title': 'दृष्टि भू-स्थानिक सुरक्षा प्रणाली',
+    'auth.title': 'दिशा भू-स्थानिक सुरक्षा प्रणाली (DISHA)',
     'auth.subtitle': 'राष्ट्रीय आपदा प्रबंधन, रेड-ज़ोन पहचान एवं राहत कमान पोर्टल',
     'auth.selectRole': 'संचालन भूमिका / पद का चयन करें',
     'auth.chooseLanguage': 'अपनी पसंदीदा भाषा चुनें (Select Language)',

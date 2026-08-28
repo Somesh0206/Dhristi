@@ -19,7 +19,7 @@ export async function POST(request) {
         const formParams = new URLSearchParams({
           To: to,
           From: fromPhone,
-          Body: message || '[DHRISTI EMERGENCY ALERT] Mandatory Evacuation in progress.'
+          Body: message || '[DISHA EMERGENCY ALERT] Mandatory Evacuation in progress.'
         });
 
         const twilioRes = await fetch(twilioEndpoint, {
