@@ -1,60 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import { useApp } from '@/context/AppContext';
 import { encryptPayload, decryptPayload } from '@/lib/crypto';
 import {
   Lock,
   ShieldCheck,
   Send,
-
-
-
   Phone,
   Radio,
   CheckCheck,
-
   RefreshCw,
-
-
-  Database } from
-
-
-
-'lucide-react';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  Database
+} from 'lucide-react';
 
 export default function SecureChatPage() {
   const { language, currentUser, openSosModal } = useApp();
@@ -227,11 +185,8 @@ export default function SecureChatPage() {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col">
-      <Navbar />
-
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col">
-        {/* Header Title & Encryption Status Banner */}
+    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col">
+      {/* Header Title & Encryption Status Banner */}
         <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
           <div>
             <div className="flex items-center space-x-2">
@@ -538,9 +493,6 @@ export default function SecureChatPage() {
             }
           </div>
         </div>
-      </main>
-
-      <Footer />
-    </div>);
-
+    </div>
+  );
 }

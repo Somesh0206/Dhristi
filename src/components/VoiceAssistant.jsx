@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import {
   Mic,
@@ -37,6 +37,7 @@ import {
 
 export default function VoiceAssistant() {
   const router = useRouter();
+  const pathname = usePathname();
   const {
     isVoiceAssistantOpen,
     closeVoiceAssistant,
@@ -517,18 +518,20 @@ export default function VoiceAssistant() {
           </div>
         </button>
 
-        {/* Encrypted 1-on-1 Chat Trigger */}
-        <Link
-          href="/chat"
-          className="group relative flex items-center space-x-2.5 px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full shadow-2xl shadow-emerald-500/40 border border-emerald-400/40 transition-all hover:scale-105 active:scale-95"
-          title="Open Encrypted 1-on-1 Disaster Support Chat">
-          
-          <Lock className="w-4 h-4 text-emerald-200" />
-          <span className="font-black text-xs tracking-wider uppercase">
-            {language === 'hi' ? 'सुरक्षित चैट' : 'SECURE CHAT'}
-          </span>
-          <span className="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
-        </Link>
+        {/* Encrypted 1-on-1 Chat Trigger (Hidden when already on /chat) */}
+        {pathname !== '/chat' && (
+          <Link
+            href="/chat"
+            className="group relative flex items-center space-x-2.5 px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full shadow-2xl shadow-emerald-500/40 border border-emerald-400/40 transition-all hover:scale-105 active:scale-95"
+            title="Open Encrypted 1-on-1 Disaster Support Chat">
+            
+            <Lock className="w-4 h-4 text-emerald-200" />
+            <span className="font-black text-xs tracking-wider uppercase">
+              {language === 'hi' ? 'सुरक्षित चैट' : 'SECURE CHAT'}
+            </span>
+            <span className="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
+          </Link>
+        )}
       </div>);
 
   }
