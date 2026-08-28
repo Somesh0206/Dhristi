@@ -277,53 +277,92 @@ export default function AddShelterModal() {
           </button>
         </div>
 
-        {/* Clearance Role Status Notification */}
-        <div className="px-6 py-2.5 bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
-          <div className="flex items-center space-x-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span className="text-slate-600 dark:text-slate-300 font-medium">
-              {language === 'hi' ? 'संचालन निकासी स्तर:' : 'Authorized Clearance:'}
-            </span>
-            <span
-              className={`font-bold px-2 py-0.5 rounded-md uppercase text-[10px] ${
-                currentUser?.role === 'ADMIN'
-                  ? 'bg-red-500/20 text-red-600 dark:text-red-400'
-                  : currentUser?.role === 'STAFF'
-                  ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
-                  : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-              }`}>
-              {currentUser?.role || 'STAFF'} • {currentUser?.name || 'Field Officer'}
-            </span>
+        {/* Access Restriction Guard for Citizens / Non-Authorized Users */}
+        {!isAuthorized ? (
+          <div className="p-8 text-center space-y-6">
+            <div className="w-16 h-16 rounded-3xl bg-teal-500/10 border-2 border-teal-500/30 text-teal-600 dark:text-teal-400 flex items-center justify-center mx-auto shadow-lg shadow-teal-500/20">
+              <ShieldAlert className="w-8 h-8 animate-pulse" />
+            </div>
+
+            <div className="max-w-md mx-auto space-y-2">
+              <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                {language === 'hi'
+                  ? 'सुरक्षा अनुमति आवश्यक: केवल प्रशासक या राहत स्टाफ'
+                  : 'SEOC Clearance Required: Admin or Staff Only'}
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                {language === 'hi'
+                  ? 'नया सुरक्षित आश्रय या पुनर्वास हब जोड़ना राष्ट्रीय आपदा जीआईएस रूटिंग और वहन क्षमता गणना को सीधे प्रभावित करता है। केवल अधिकृत SEOC प्रशासकों और NDRF/SDRF स्टाफ को नए केंद्र जोड़ने की अनुमति है।'
+                  : 'Registering new safe havens and relocation hubs modifies live GIS disaster routing meshes and carrying capacity calculations across national emergency networks. Only SEOC Administrators and NDRF/SDRF Relief Staff are authorized to add or modify shelters.'}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between max-w-md mx-auto">
+              <span>{language === 'hi' ? 'वर्तमान निकासी स्तर:' : 'Current Clearance Role:'}</span>
+              <span className="font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded border border-amber-500/20">
+                {currentUser?.role || 'CITIZEN'}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-center space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  closeAddShelterModal();
+                  setIsAuthModalOpen(true);
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 hover:from-teal-700 hover:to-emerald-800 text-white rounded-xl text-xs font-bold shadow-lg shadow-teal-600/30 flex items-center space-x-2 transition-all hover:scale-105">
+                <ShieldCheck className="w-4 h-4" />
+                <span>
+                  {language === 'hi'
+                    ? 'प्रशासक / स्टाफ के रूप में लॉगिन करें'
+                    : 'Authenticate as Admin / Staff'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={closeAddShelterModal}
+                className="px-5 py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                {language === 'hi' ? 'रद्द करें' : 'Dismiss'}
+              </button>
+            </div>
           </div>
-
-          {!isAuthorized && (
-            <button
-              type="button"
-              onClick={() => {
-                closeAddShelterModal();
-                setIsAuthModalOpen(true);
-              }}
-              className="text-blue-500 font-bold hover:underline text-[11px]">
-              {language === 'hi' ? 'प्रशासक / स्टाफ रूप में लॉगिन करें' : 'Switch to Staff / Admin'}
-            </button>
-          )}
-        </div>
-
-        {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
-          {errorMessage && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs rounded-xl flex items-center space-x-2 animate-shake">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{errorMessage}</span>
+        ) : (
+          <>
+            {/* Clearance Role Status Notification */}
+            <div className="px-6 py-2.5 bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                <span className="text-slate-600 dark:text-slate-300 font-medium">
+                  {language === 'hi' ? 'संचालन निकासी स्तर:' : 'Authorized Clearance:'}
+                </span>
+                <span
+                  className={`font-bold px-2 py-0.5 rounded-md uppercase text-[10px] ${
+                    currentUser?.role === 'ADMIN'
+                      ? 'bg-red-500/20 text-red-600 dark:text-red-400'
+                      : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
+                  }`}>
+                  {currentUser?.role || 'STAFF'} • {currentUser?.name || 'Field Officer'}
+                </span>
+              </div>
             </div>
-          )}
 
-          {successMessage && (
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs rounded-xl flex items-center space-x-2 font-bold animate-in fade-in">
-              <Sparkles className="w-4 h-4 shrink-0" />
-              <span>{successMessage}</span>
-            </div>
-          )}
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
+              {errorMessage && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs rounded-xl flex items-center space-x-2 animate-shake">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {successMessage && (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs rounded-xl flex items-center space-x-2 font-bold animate-in fade-in">
+                  <Sparkles className="w-4 h-4 shrink-0" />
+                  <span>{successMessage}</span>
+                </div>
+              )}
 
           {/* 1. Facility Category Picker */}
           <div>
@@ -592,7 +631,9 @@ export default function AddShelterModal() {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </>
+    )}
+  </div>
+</div>
   );
 }

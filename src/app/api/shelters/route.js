@@ -55,6 +55,18 @@ export async function POST(request) {
       addedByName
     } = body;
 
+    // Security Clearance Check: ONLY Admin or Staff can add new safe shelters or relocation hubs
+    const creatorRole = (addedByRole || '').toUpperCase();
+    if (creatorRole !== 'ADMIN' && creatorRole !== 'STAFF') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Access Denied: Only SEOC Administrators and Relief Staff are authorized to register safe shelters or relocation hubs.'
+        },
+        { status: 403 }
+      );
+    }
+
     if (!name || !coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
       return NextResponse.json(
         { success: false, error: 'Name and valid [lat, lon] coordinates are required' },

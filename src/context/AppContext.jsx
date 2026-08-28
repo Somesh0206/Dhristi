@@ -327,6 +327,13 @@ export function AppProvider({ children }) {
   const closeAddShelterModal = () => setIsAddShelterModalOpen(false);
 
   const addSafeShelter = async (shelterData) => {
+    if (currentUser?.role !== 'ADMIN' && currentUser?.role !== 'STAFF') {
+      return {
+        success: false,
+        error: 'Access Denied: Only SEOC Administrators and Relief Staff are authorized to register safe shelters or relocation hubs.'
+      };
+    }
+
     try {
       const payload = {
         ...shelterData,
@@ -344,6 +351,15 @@ export function AppProvider({ children }) {
         setShelters((prev) => [data.shelter, ...prev]);
         triggerEvacuationCelebration();
         playSosBeep();
+        if (logUserActivity) {
+          logUserActivity('REGISTER_SHELTER', 'SafeHavenRegistration', {
+            shelterId: data.shelter.id,
+            facilityName: data.shelter.name,
+            facilityType: data.shelter.type,
+            capacity: data.shelter.totalCapacity,
+            district: data.shelter.district
+          });
+        }
         return { success: true, shelter: data.shelter };
       }
       return { success: false, error: data.error || 'Failed to create shelter' };
@@ -358,6 +374,8 @@ export function AppProvider({ children }) {
         allocatedOccupancy: parseInt(shelterData.currentOccupancy, 10) || 0,
         status: 'OPTIMAL',
         resilienceScore: 90,
+        addedByRole: currentUser?.role || 'STAFF',
+        addedByName: currentUser?.name || 'Authorized Officer',
         facilities: shelterData.facilities || [
           '24x7 Emergency Power & Solar Backup Grid',
           'Safe Drinking Water Purification Point',
