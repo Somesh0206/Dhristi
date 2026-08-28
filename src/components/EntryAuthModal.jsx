@@ -74,7 +74,7 @@ export default function EntryAuthModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-lg animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-lg animate-in fade-in duration-200">
       {/* Top Floating Emergency Bypass Trigger */}
       <div className="absolute top-4 left-4 sm:left-8 z-10 flex items-center space-x-2">
         <button

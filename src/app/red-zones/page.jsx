@@ -23,12 +23,21 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
-  RotateCw
+  RotateCw,
+  PlusCircle,
+  Building2
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function RedZonesPage() {
-  const { language, userCoordinates, requestUserLocation, t } = useApp();
+  const {
+    language,
+    userCoordinates,
+    requestUserLocation,
+    openAddShelterModal,
+    currentUser,
+    t
+  } = useApp();
   const [selectedHazard, setSelectedHazard] = useState('all');
   const [selectedRisk, setSelectedRisk] = useState('all');
   const [selectedHabitation, setSelectedHabitation] = useState(mockHabitations[0]);
@@ -181,20 +190,31 @@ export default function RedZonesPage() {
           </p>
         </div>
 
-        {/* Quick Legend */}
-        <div className="flex items-center space-x-3 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold">
-          <span className="flex items-center space-x-1.5 text-red-500">
-            <span className="w-3 h-3 rounded-full bg-red-500 inline-block animate-ping-slow"></span>
-            <span>{language === 'hi' ? 'रेड (>75% उच्च जोखिम)' : 'Red (>75% High Risk)'}</span>
-          </span>
-          <span className="flex items-center space-x-1.5 text-amber-500">
-            <span className="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
-            <span>{language === 'hi' ? 'ऑरेंज (40-75% मध्यम)' : 'Orange (40-75% Mod)'}</span>
-          </span>
-          <span className="flex items-center space-x-1.5 text-emerald-500">
-            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
-            <span>{language === 'hi' ? 'ग्रीन (<40% सुरक्षित)' : 'Green (<40% Safe)'}</span>
-          </span>
+        {/* Actions: Add Shelter / Hub + Quick Legend */}
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={openAddShelterModal}
+            className="px-3.5 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-md transition-all hover:scale-105"
+            title="Register New Safe Shelter or Relocation Staging Hub">
+            <PlusCircle className="w-4 h-4" />
+            <span>{language === 'hi' ? '+ सुरक्षित आश्रय / हब जोड़ें' : '+ Add Safe Haven / Hub'}</span>
+          </button>
+
+          <div className="flex items-center space-x-3 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold">
+            <span className="flex items-center space-x-1.5 text-red-500">
+              <span className="w-3 h-3 rounded-full bg-red-500 inline-block animate-ping-slow"></span>
+              <span>{language === 'hi' ? 'रेड (>75% उच्च जोखिम)' : 'Red (>75% High Risk)'}</span>
+            </span>
+            <span className="flex items-center space-x-1.5 text-amber-500">
+              <span className="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+              <span>{language === 'hi' ? 'ऑरेंज (40-75% मध्यम)' : 'Orange (40-75% Mod)'}</span>
+            </span>
+            <span className="flex items-center space-x-1.5 text-emerald-500">
+              <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+              <span>{language === 'hi' ? 'ग्रीन (<40% सुरक्षित)' : 'Green (<40% Safe)'}</span>
+            </span>
+          </div>
         </div>
       </div>
 

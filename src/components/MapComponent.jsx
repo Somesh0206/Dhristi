@@ -186,20 +186,21 @@ export default function MapComponent({
   return (
     <div
       style={{ height, width: '100%' }}
-      className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 group"
+      className="relative isolate rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 group z-0"
     >
-      {/* Floating Map Tile Provider Selector (Default: Google Maps Roadmap) */}
-      <div className="absolute top-3 right-3 z-[1000] bg-slate-900/90 backdrop-blur-md px-2 py-1.5 rounded-xl border border-slate-700/80 shadow-2xl flex items-center space-x-1.5 text-xs transition-all">
+      {/* Map Tile Provider Selector (Isolated z-20 within map context) */}
+      <div className="absolute top-3 right-3 z-20 bg-slate-900/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-slate-700/80 shadow-lg flex items-center space-x-1.5 text-xs transition-all pointer-events-auto max-w-[190px] sm:max-w-xs">
         <Layers className="w-3.5 h-3.5 text-blue-400 shrink-0" />
         <select
           value={mapTileProvider}
           onChange={(e) => setMapTileProvider(e.target.value)}
-          className="bg-transparent text-slate-100 font-bold text-[11px] focus:outline-none cursor-pointer pr-1"
+          className="bg-transparent text-slate-100 font-bold text-[11px] focus:outline-none cursor-pointer pr-1 truncate"
+          aria-label="Map Tile Provider Layer"
         >
           <option value="google_roadmap" className="bg-slate-900 text-white">🗺️ Google Maps (Roadmap)</option>
-          <option value="google_hybrid" className="bg-slate-900 text-white">🛰️ Google Maps (Satellite Hybrid)</option>
-          <option value="google_terrain" className="bg-slate-900 text-white">⛰️ Google Maps (3D Terrain)</option>
-          <option value="esri_satellite" className="bg-slate-900 text-white">🍏 Apple / Esri Satellite</option>
+          <option value="google_hybrid" className="bg-slate-900 text-white">🛰️ Google Maps (Satellite)</option>
+          <option value="google_terrain" className="bg-slate-900 text-white">⛰️ Google Maps (Terrain)</option>
+          <option value="esri_satellite" className="bg-slate-900 text-white">🍏 Esri Satellite</option>
           <option value="osm" className="bg-slate-900 text-white">🌐 OpenStreetMap</option>
         </select>
       </div>

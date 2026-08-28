@@ -331,7 +331,7 @@ export default function AdminPage() {
 
       {/* Dispatch Modal Dialog */}
       {activeDispatchSos &&
-      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="glass-panel max-w-lg w-full p-6 rounded-2xl shadow-2xl space-y-4 border-2 border-amber-500">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center space-x-2">

@@ -26,11 +26,10 @@ import {
   ShieldCheck,
   UserCheck,
   Eye,
-
   Mic,
-
-  Lock } from
-'lucide-react';
+  Lock,
+  PlusCircle
+} from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -38,6 +37,7 @@ export default function Navbar() {
     isDarkMode,
     toggleTheme,
     openSosModal,
+    openAddShelterModal,
     activeAlertCount,
     openVoiceAssistant,
     currentUser,
@@ -212,11 +212,22 @@ export default function Navbar() {
               <ShieldCheck className="w-3.5 h-3.5 text-red-500" /> :
               currentUser?.role === 'STAFF' ?
               <UserCheck className="w-3.5 h-3.5 text-blue-500" /> :
-
               <Eye className="w-3.5 h-3.5 text-emerald-500" />
               }
               <span>{roleLabel}</span>
             </button>
+
+            {/* Quick Add Shelter / Hub button for Admin and Staff */}
+            {(currentUser?.role === 'ADMIN' || currentUser?.role === 'STAFF') && (
+              <button
+                type="button"
+                onClick={openAddShelterModal}
+                className="hidden xl:flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-teal-500/15 hover:bg-teal-500/25 text-teal-600 dark:text-teal-400 border border-teal-500/30 transition-all shadow-sm"
+                title="Register New Safe Haven or Relocation Staging Hub">
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>{language === 'hi' ? '+ आश्रय/हब' : '+ Add Hub'}</span>
+              </button>
+            )}
 
             {/* Dark / Light Toggle */}
             <button
@@ -291,6 +302,20 @@ export default function Navbar() {
               <span>{language === 'hi' ? 'सुरक्षित चैट' : 'Chat'}</span>
             </Link>
           </div>
+
+          {/* Mobile Add Haven / Hub button for Admin/Staff */}
+          {(currentUser?.role === 'ADMIN' || currentUser?.role === 'STAFF') && (
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                openAddShelterModal();
+              }}
+              className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-bold text-xs flex items-center justify-center space-x-2 shadow-md">
+              <PlusCircle className="w-4 h-4" />
+              <span>{language === 'hi' ? '+ नया सुरक्षित आश्रय / पुनर्वास हब जोड़ें' : '+ Register Safe Haven / Relocation Hub'}</span>
+            </button>
+          )}
 
           {navLinks.map((link) => {
           const Icon = link.icon;
