@@ -9,6 +9,8 @@ import {
   Search,
   CheckCircle2,
   ShieldCheck,
+  ShieldAlert,
+  Lock,
   X,
   Truck,
   Droplet,
@@ -19,7 +21,8 @@ import {
   UserCheck,
   AlertCircle,
   Sparkles,
-  Loader2
+  Loader2,
+  PlusCircle
 } from 'lucide-react';
 
 const SHELTER_TYPES = [
